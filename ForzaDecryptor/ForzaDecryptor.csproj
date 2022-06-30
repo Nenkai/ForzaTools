@@ -18,31 +18,55 @@
     <None Update="config.ini">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Keys\FH3_137963.gamedb_decryptionkey">
+    <None Update="Keys\FH3_137963\gamedb_decryptionkey">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Keys\FH3_137963.aes_state">
+    <None Update="Keys\FH3_137963\aes_sbox_decrypt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Keys\FH3_137963.indices">
+    <None Update="Keys\FH3_137963\aes_sbox_indices_dec">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Keys\FH3_137963.file_decryptionkey">
+    <None Update="Keys\FH3_137963\file_decryptionkey">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Keys\FH5_475474.gamedb_decryptionkey">
+    <None Update="Keys\FH5_475474\file_mackey">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Keys\FH5_475474.sfs_decryptionkey">
+    <None Update="Keys\FH5_475474\aes_sbox_verif">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Keys\FH5_475474.file_decryptionkey">
+    <None Update="Keys\FH5_475474\aes_sbox_indices_verif">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Keys\FH5_475474.aes_state">
+    <None Update="Keys\FH5_475474\gamedb_mackey">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Keys\FH5_475474\aes_sbox_encrypt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Keys\FH5_475474\aes_sbox_indices_dec">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Keys\FH5_475474\aes_sbox_indices_enc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Keys\FH5_475474\gamedb_decryptionkey">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Keys\FH5_475474\sfs_decryptionkey">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Keys\FH5_475474\file_decryptionkey">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Keys\FH5_475474\aes_sbox_decrypt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Keys\FH5_475474.indices">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Keys\FH5_475474\sfs_mackey">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

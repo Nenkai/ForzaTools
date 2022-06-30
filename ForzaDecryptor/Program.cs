@@ -2,14 +2,23 @@
 using System.Runtime.InteropServices;
 using System;
 using System.IO.Compression;
+using System.Buffers.Binary;
 
-namespace TransformIT;
+namespace ForzaDecryptor;
 
 public class Program
 {
     public static byte[] keywrapper_gamedb_decryptionkey;
+    public static byte[] keywrapper_gamedb_mackey;
+
     public static byte[] keywrapper_sfs_decryptionkey;
+    public static byte[] keywrapper_sfs_mackey;
+
     public static byte[] keywrapper_file_decryptionkey;
+    public static byte[] keywrapper_file_mackey;
+
+    public static byte[] keywrapper_profile_decryptionkey;
+    public static byte[] keywrapper_profile_mackey;
 
     public static void Main(string[] args)
     {
@@ -35,9 +44,6 @@ public class Program
         }
 
         string name = string.Empty;
-
-
-        Console.WriteLine(exeDir);
 
         foreach (var line in File.ReadAllLines(Path.Combine(exeDir, "config.ini")))
         {
@@ -73,25 +79,51 @@ public class Program
             return;
         }
 
-        if (File.Exists(Path.Combine(exeDir, "Keys", $"{name}.gamedb_decryptionkey")))
-            keywrapper_gamedb_decryptionkey = File.ReadAllBytes(Path.Combine(exeDir, "Keys", $"{name}.gamedb_decryptionkey"));
+        if (File.Exists(Path.Combine(exeDir, "Keys", name, "gamedb_decryptionkey")))
+            keywrapper_gamedb_decryptionkey = File.ReadAllBytes(Path.Combine(exeDir, "Keys", name, "gamedb_decryptionkey"));
 
-        if (File.Exists(Path.Combine(exeDir, "Keys", $"{name}.sfs_decryptionkey")))
-            keywrapper_sfs_decryptionkey = File.ReadAllBytes(Path.Combine(exeDir, "Keys", $"{name}.sfs_decryptionkey"));
+        if (File.Exists(Path.Combine(exeDir, "Keys", name, "gamedb_mackey")))
+            keywrapper_gamedb_mackey = File.ReadAllBytes(Path.Combine(exeDir, "Keys", name, "gamedb_mackey"));
 
-        if (File.Exists(Path.Combine(exeDir, "Keys", $"{name}.file_decryptionkey")))
-            keywrapper_file_decryptionkey = File.ReadAllBytes(Path.Combine(exeDir, "Keys", $"{name}.file_decryptionkey"));
+        if (File.Exists(Path.Combine(exeDir, "Keys", name, "sfs_decryptionkey")))
+            keywrapper_sfs_decryptionkey = File.ReadAllBytes(Path.Combine(exeDir, "Keys", name, "sfs_decryptionkey"));
+
+        if (File.Exists(Path.Combine(exeDir, "Keys", name, "sfs_mackey")))
+            keywrapper_sfs_mackey = File.ReadAllBytes(Path.Combine(exeDir, "Keys", name, "sfs_mackey"));
+
+        if (File.Exists(Path.Combine(exeDir, "Keys", name, "file_decryptionkey")))
+            keywrapper_file_decryptionkey = File.ReadAllBytes(Path.Combine(exeDir, "Keys", name, "file_decryptionkey"));
+
+        if (File.Exists(Path.Combine(exeDir, "Keys", name, "file_mackey")))
+            keywrapper_file_mackey = File.ReadAllBytes(Path.Combine(exeDir, "Keys", name, "file_mackey"));
 
         Console.WriteLine($"Processing '{args[0]}'");
 
+        
         if (args[0].Contains(".slt"))
         {
-            DecryptFile(args[0], keywrapper_gamedb_decryptionkey, 0x20000, isSourceObfuscated: true);
-            
+            var provider = new TransformITCryptoProvider(keywrapper_gamedb_decryptionkey, keywrapper_gamedb_mackey);
+
+            using var fs = new FileStream(args[0], FileMode.Open);
+            var stream = new TransformITAesCryptoStream(fs, provider, 0x20000);
+            var obfsStream = new ObfuscationStream(stream, MemoryMarshal.Cast<byte, int>(ObfuscationStream.Key)[0]);
+            DecryptFile(obfsStream, (int)stream.Length, args[0]);
         }
         else if (args[0].Contains("sfsdata"))
         {
-            DecryptFile(args[0], keywrapper_sfs_decryptionkey, 0x20000);
+            var provider = new TransformITCryptoProvider(keywrapper_sfs_decryptionkey, keywrapper_sfs_mackey);
+
+            using var fs = new FileStream(args[0], FileMode.Open);
+            var cryptoStream = new TransformITAesCryptoStream(fs, provider, 0x20000);
+            DecryptFile(cryptoStream, (int)cryptoStream.Length, args[0]);
+        }
+        else if (args[0].EndsWith(".ProfileData") || args[0].EndsWith(".ProfileBackup") || args[0].EndsWith(".VersionFlags") || args[0].EndsWith(".UserPurchasesTelemetry"))
+        {
+            var provider = new TransformITCryptoProvider(keywrapper_profile_decryptionkey, keywrapper_profile_mackey);
+
+            using var fs = new FileStream(args[0], FileMode.Open);
+            var cryptoStream = new TransformITAesCryptoStream(fs, provider, 0x200);
+            DecryptFile(cryptoStream, (int)cryptoStream.Length, args[0]);
         }
         else if (args[0].EndsWith(".zip"))
         {
@@ -100,76 +132,29 @@ public class Program
         }
         else
         {
-            DecryptFile(args[0], keywrapper_file_decryptionkey, 0x200);
+            var provider = new TransformITCryptoProvider(keywrapper_file_decryptionkey, keywrapper_file_mackey);
+
+            using var fs = new FileStream(args[0], FileMode.Open);
+            var stream = new TransformITAesCryptoStream(fs, provider, 0x200);
         }
+        
     }
 
-    public static void DecryptFile(string inputFileName, byte[] key, int chunkSize, bool isSourceObfuscated = false)
+    public static void DecryptFile(Stream input, int fileSize, string inputFileName)
     {
-        var provider = new TransformITCryptoProvider(key);
-
-        using (FileStream input = new FileStream(inputFileName, FileMode.Open))
         using (FileStream output = new FileStream(inputFileName + ".temp", FileMode.Create))
         {
-            ProcessFile(provider, input, output, chunkSize, isSourceObfuscated);
+            byte[] buffer = new byte[0x20000];
+            while (fileSize > 0)
+            {
+                int read = input.Read(buffer);
+                output.Write(buffer, 0, read);
+
+                fileSize -= read;
+            }
         }
 
         File.Move(inputFileName + ".temp", inputFileName, overwrite: true);
-    }
-
-    private static void ProcessFile(TransformITCryptoProvider provider, Stream input, Stream output, int chunkSize, bool isSourceObfuscated = false)
-    {
-        BinaryReader br = new BinaryReader(input);
-
-        // Header - Base IV
-        br.Read(provider.BaseIV);
-        provider.BaseIV.CopyTo(provider.CurrentIV.AsSpan());
-
-        int lastChunkPad = br.ReadInt32();
-
-        int blockSize = (chunkSize + provider.IVSize);
-        long fileSizeNoHeader = input.Length - (0x10 + 0x04 + 0x10); // IV + Pad Size + HMac
-        long blockCount = (fileSizeNoHeader / blockSize);
-
-        // Begin decryption in chunks
-        byte[] inputBuffer = new byte[chunkSize];
-
-        int pos = 0;
-        int bufferLen = chunkSize;
-
-        byte[] hmac = new byte[provider.IVSize];
-        br.Read(hmac);
-
-        for (var i = 0; i < blockCount; i++)
-        {
-            if (i == blockCount - 1)
-                bufferLen = chunkSize - lastChunkPad;
-
-            // Read
-            br.Read(inputBuffer, 0, chunkSize);
-
-            // Decrypt
-            provider.TFIT_wbaes_cbc_decrypt(provider.Key, inputBuffer, chunkSize, provider.CurrentIV, inputBuffer);
-
-            if (isSourceObfuscated)
-            {
-                // Decrypt 2 (database)
-                ObfuscationStream.TransformBlock(
-                    MemoryMarshal.Cast<byte, int>(ObfuscationStream.Key)[0],
-                    inputBuffer,
-                    inputBuffer,
-                    bufferLen,
-                    ref pos);
-            }
-
-            // Read next IV
-            br.Read(provider.CurrentIV);
-
-            // TODO: verify hmac for each block
-
-            // Done, copy
-            output.Write(inputBuffer, 0, bufferLen);
-        }
     }
 }
 

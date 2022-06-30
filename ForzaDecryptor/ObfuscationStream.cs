@@ -7,65 +7,88 @@ using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using System.Buffers.Binary;
 
-namespace TransformIT
+namespace ForzaDecryptor
 {
-    public class ObfuscationStream
+    public class ObfuscationStream : Stream
     {
+        private int _seedKey;
+
+        public Stream BaseStream { get; }
+        private int _cpos; // Bad, but who cares, we're always reading all at once in this program context
+
         public static byte[] Key = new byte[]
         {
             0x4C, 0x78, 0x4B, 0x20 // FH5
         };
 
-        public static void TransformBlock(int seedKey, Span<byte> sourceBuffer, Span<byte> destBuffer, long bufferSizeBytes, ref int bytePosition)
+        public override bool CanRead => true;
+
+        public override bool CanSeek => true;
+
+        public override bool CanWrite => throw new NotImplementedException();
+
+        public override long Length => BaseStream.Length;
+
+        public override long Position { get => BaseStream.Position; set => throw new NotImplementedException(); }
+
+        public ObfuscationStream(Stream baseStream, int seedKey)
         {
-            int startVal = ((bytePosition / 4) + 1) * seedKey + (bytePosition / 4);
+            BaseStream = baseStream;
+
+            _seedKey = seedKey;
+        }
+
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            int bytesToProcess = BaseStream.Read(buffer, offset, count);
+
+            int startVal = ((_cpos / 4) + 1) * _seedKey + (_cpos / 4);
 
             int[] vals = new int[2] { startVal, 0 };
 
             uint CRC32 = GetCRC32(MemoryMarshal.Cast<int, byte>(vals), 4);
-            int remBytes = (int)bufferSizeBytes;
-            uint crcVal = CRC32 >> (8 * (sbyte)(bytePosition & 3));
+            uint crcVal = CRC32 >> (8 * (sbyte)(_cpos & 3));
 
-            int pos = 0;
-            if ((int)bufferSizeBytes > 0)
+            for (var i = 0; i < bytesToProcess; i++)
             {
-                do
-                {
-                    destBuffer[pos] ^= (byte)crcVal;
-                    bytePosition++;
+                buffer[i] ^= (byte)crcVal;
+                _cpos++;
 
-                    if ((bytePosition & 3) == 0)
-                    {
-                        int val = (bytePosition / 4) + seedKey * ((bytePosition / 4) + 1);
-                        byte[] d = new byte[4];
-                        BinaryPrimitives.WriteInt32LittleEndian(d, val);
-                        crcVal = GetCRC32(d, 4);
-                    }
-                    else
-                    {
-                        crcVal >>= 8;
-                    }
-                    --remBytes;
-                    pos++;
+                if ((_cpos & 3) == 0)
+                {
+                    int val = (_cpos / 4) + _seedKey * ((_cpos / 4) + 1);
+                    byte[] d = new byte[4];
+                    BinaryPrimitives.WriteInt32LittleEndian(d, val);
+                    crcVal = GetCRC32(d, 4);
                 }
-                while (remBytes != 0);
+                else
+                {
+                    crcVal >>= 8;
+                }
             }
+
+            return bytesToProcess;
         }
 
-        public static uint GetCRC32(Span<byte> beginStr, int length)
+        public override void Flush()
         {
-            if (beginStr.IsEmpty)
-                return 0;
-            
-            uint result = 0xffffffff;
-            for (var i = 0; i < length; i++)
-            {
-                long current = beginStr[i];
-                result = (result >> 8) ^ CRC32Table[(byte)(lowerAsciiTable[current] ^ result)];
-           
-            }
-            
-            return ~result;
+            throw new NotImplementedException();
+        }
+
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void SetLength(long value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            throw new NotImplementedException();
         }
 
         static ObfuscationStream()
@@ -108,5 +131,20 @@ namespace TransformIT
         private const uint _poly1 = 0xedb88320;
         public static uint[] CRC32Table = new uint[256];
 
+        private static uint GetCRC32(Span<byte> beginStr, int length)
+        {
+            if (beginStr.IsEmpty)
+                return 0;
+
+            uint result = 0xffffffff;
+            for (var i = 0; i < length; i++)
+            {
+                long current = beginStr[i];
+                result = (result >> 8) ^ CRC32Table[(byte)(lowerAsciiTable[current] ^ result)];
+
+            }
+
+            return ~result;
+        }
     }
 }

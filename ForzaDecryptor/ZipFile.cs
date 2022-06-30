@@ -9,7 +9,7 @@ using Syroot.BinaryData;
 using ICSharpCode.SharpZipLib.Zip.Compression;
 using ICSharpCode.SharpZipLib.Zip.Compression.Streams;
 
-namespace TransformIT
+namespace ForzaDecryptor
 {
     internal class ZipFile
     {
@@ -67,7 +67,7 @@ namespace TransformIT
             return zip;
         }
 
-        public long roundUp(long numToRound, int multiple)
+        public long roundUp(long numToRound, uint multiple)
         {
             if (multiple == 0)
                 return numToRound;
@@ -104,59 +104,30 @@ namespace TransformIT
             {
                 const int chunkSize = 0x200;
 
-                var provider = new TransformITCryptoProvider(Program.keywrapper_file_decryptionkey);
-                inputStream.Read(provider.BaseIV);
+                var provider = new TransformITCryptoProvider(Program.keywrapper_file_decryptionkey, Program.keywrapper_file_mackey);
+                var cryptoStream = new TransformITAesCryptoStream(inputStream, provider, chunkSize, (int)entry.CompressedSize);
 
-                provider.BaseIV.CopyTo(provider.CurrentIV.AsSpan());
-
-                int lastChunkPad = inputStream.ReadInt32();
-
-                int blockSize = (chunkSize + provider.IVSize);
-                long fileSizeNoHeader = entry.CompressedSize - (0x10 + 0x04 + 0x10); // IV + Pad Size + HMac
-
-                long roundedSize = roundUp(fileSizeNoHeader, blockSize);
-                long blockCount = (roundedSize / blockSize);
-
-                // Begin decryption in chunks
+                int fileSize = (int)cryptoStream.Length;
                 byte[] inputBuffer = new byte[chunkSize];
 
-                int bufferLen = chunkSize;
-
-                byte[] hmac = new byte[provider.IVSize];
-                inputStream.Read(hmac);
-
-                // Setup compression
                 Inflater inflater = new Inflater(true);
                 byte[] deflateBuffer = new byte[0x4000];
 
-                for (var i = 0; i < blockCount; i++)
+                while (fileSize > 0)
                 {
-                    if (i == blockCount - 1)
-                        bufferLen = chunkSize - lastChunkPad;
-
-                    // Read
-                    inputStream.Read(inputBuffer, 0, chunkSize);
-
                     // Decrypt
-                    provider.TFIT_wbaes_cbc_decrypt(provider.Key, inputBuffer, chunkSize, provider.CurrentIV, inputBuffer); // Always decrypt the whole chunk 
+                    int read = cryptoStream.Read(inputBuffer);
 
-                    // Done, copy
-                    inflater.SetInput(inputBuffer, 0, bufferLen);
-
-                    while (!inflater.IsNeedingInput)
+                    // Deflate
+                    inflater.SetInput(inputBuffer, 0, read);
+                    while (!inflater.IsNeedingInput && !inflater.IsFinished)
                     {
                         int deflated = inflater.Inflate(deflateBuffer);
                         output.Write(deflateBuffer, 0, deflated);
                     }
 
-                    // Read next IV
-                    inputStream.Read(provider.CurrentIV);
-
-
-                    // TODO: verify hmac for each block
+                    fileSize -= read;
                 }
-
-
             }
         }
     }
