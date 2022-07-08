@@ -55,8 +55,11 @@ namespace BXML
         {
             writer.WriteStartElement(node.Name);
 
-            foreach (var attr in node.Attributes)
-                writer.WriteAttributeString(attr.Key, attr.Value);
+            if (node.Attributes is not null)
+            {
+                foreach (var attr in node.Attributes)
+                    writer.WriteAttributeString(attr.Key, attr.Value);
+            }
 
             if (node.ChildNodes != null)
             {

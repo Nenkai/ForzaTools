@@ -144,6 +144,8 @@ namespace ForzaDecryptor
                     Memcpy(buffer.AsSpan(offset), _currentChunk[(int)_positionWithinChunk..], toRead);
 
                     _positionWithinChunk += toRead;
+                    offset += toRead;
+
                     count -= toRead;
                     bytesConsumed += toRead;
                 }
