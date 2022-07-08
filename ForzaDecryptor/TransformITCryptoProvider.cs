@@ -619,7 +619,7 @@ namespace ForzaDecryptor
                                 {
                                     // memcpy(tmpInput + (blockRem + 1), currentHash + (blockRem + 1), 16 - blockRem - 1);
                                     int cpySize = 0x10 - (int)blockRem - 1;
-                                    Memcpy(currentHash.AsSpan((int)blockRem + 1), tmpInput.AsSpan((int)blockRem + 1), cpySize);
+                                    Memcpy(tmpInput.AsSpan((int)blockRem + 1), currentHash.AsSpan((int)blockRem + 1), cpySize);
                                 }
 
                                 tmpBlk.Clear();
@@ -647,7 +647,7 @@ namespace ForzaDecryptor
                         }
                     }
 
-                    Memcpy(currentHash, outputHash, blockSize);
+                    Memcpy(outputHash, currentHash, blockSize);
                 }
             }
 

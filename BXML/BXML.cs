@@ -73,10 +73,10 @@ namespace BXML
             var node = new CXMLNode();
 
             byte nodeFlags = bs.Read1Byte();
+            node.Name = ReadStringIndex(bs);
+
             if ((nodeFlags & 0x02) != 0) // attributes
             {
-                node.Name = ReadStringIndex(bs);
-
                 byte attrCount = bs.Read1Byte();
                 node.Attributes = new List<CXMLAttribute>(attrCount);
 

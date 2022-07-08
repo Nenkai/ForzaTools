@@ -88,7 +88,7 @@ namespace ForzaDecryptor
             _chunkCount = (fileSizeNoHeader / chunkSizeIncludingIV);
 
             // Create integrity header
-            Span<byte> headerIntegrity = stackalloc byte[(int)(4 + _provider.IVSize + 4)]; // totalChunkedSize + IV + lastChunkPad
+            Span<byte> headerIntegrity = new byte[(int)(4 + _provider.IVSize + 4)]; // totalChunkedSize + IV + lastChunkPad
             BinaryPrimitives.WriteUInt32LittleEndian(headerIntegrity, (uint)_totalChunkedSize);
             _baseIV.CopyTo(headerIntegrity[0x04..]);
             BinaryPrimitives.WriteUInt32LittleEndian(headerIntegrity[0x14..], _lastChunkPad);
@@ -96,6 +96,10 @@ namespace ForzaDecryptor
             if (!_provider.Authenticate(headerIntegrity, 0x18, _headerHMac))
             {
                 Console.WriteLine("WARNING: Could not authenticate stream header with Mac Key");
+            }
+            else
+            {
+                Console.WriteLine("Stream header successfully authenticated");
             }
         }
 
@@ -219,6 +223,12 @@ namespace ForzaDecryptor
         public override void Write(byte[] buffer, int offset, int count)
         {
             throw new NotImplementedException();
+        }
+
+        public override void Close()
+        {
+            _baseStream.Close();
+            base.Close();
         }
     }
 }
