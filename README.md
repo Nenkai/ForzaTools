@@ -12,4 +12,4 @@ Made solely by me around mid-2022, making it public as it's been mostly figured 
 
 ## License
 
-MIT License. If you're using this in any shape, credits are appreciated
+Code is under MIT License. If you're using this in any shape, credits are appreciated
