@@ -8,7 +8,9 @@ Encryption is not possible for certain files - asymetric encryption is used and 
 Also contains a BXML (Binary XML) to XML converter.
 
 ## History
-Made solely by me around mid-2022, making it public as it's been mostly figured by other people publicly now. Keys have not been changed since.
+Made solely by me around mid-2022, making it public as it has mostly been figured by other people recently and publicly, aswell as for previous games. Keys for FH5 have not been changed since.
+
+This tool was initially private due to its nature of it affecting current supported games.
 
 ## License
 
