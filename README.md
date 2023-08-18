@@ -4,6 +4,8 @@ A C# tool that decrypts FH5's TransformIT encrypted files - zips, files and game
 
 Encryption is not possible for certain files - asymetric encryption is used and the private encryption keys are not available.
 
+**Keys are not currently included in this repository.** This should be used as a reference instead.
+
 ## BXML
 Also contains a BXML (Binary XML) to XML converter.
 
