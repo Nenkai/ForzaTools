@@ -38,14 +38,54 @@ namespace ForzaDBLoadPatcher
 
             KillIfExists();
 
-            Console.WriteLine("Starting FH4 from steam");
-            var steamProcess = Process.Start(new ProcessStartInfo()
+            if (args.Length > 0 && !string.IsNullOrEmpty(args[0]))
             {
-                FileName = @$"steam://rungameid/{FH4SteamAppId}",
-                UseShellExecute = true,
-                Verb = "open"
-            });
-            Thread.Sleep(8000);
+                if (!File.Exists(args[0]))
+                {
+                    Console.WriteLine($"Executable file '{args[0]}' does not exist");
+                    return;
+                }
+
+                if (!args[0].EndsWith(".exe"))
+                {
+                    Console.WriteLine($"Invalid file provided");
+                    return;
+                }
+
+                Console.WriteLine($"Starting from {args[0]}");
+
+                // Start from exe, wait for the bootstrap to end
+                try
+                {
+                    var fh4process = Process.Start(new ProcessStartInfo()
+                    {
+                        WorkingDirectory = Path.GetDirectoryName(args[0]),
+                        FileName = args[0]
+                    });
+
+                    fh4process.WaitForExit();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Failed to start FH4: {e.Message}");
+                    return;
+                }
+
+                Thread.Sleep(3000);
+                // By now, the actual process should have booted
+            }
+            else
+            {
+                Console.WriteLine("Attempting to start FH4 from steam");
+                Console.WriteLine("NOTE: Provide executable path to start from an executable instead");
+
+                var steamProcess = Process.Start(new ProcessStartInfo()
+                {
+                    FileName = @$"steam://rungameid/{FH4SteamAppId}",
+                    UseShellExecute = true,
+                    Verb = "open"
+                });
+            }
 
             int attempts = 100;
             while (attempts > 0)
