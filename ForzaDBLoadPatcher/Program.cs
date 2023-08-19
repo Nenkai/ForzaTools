@@ -54,7 +54,6 @@ namespace ForzaDBLoadPatcher
 
                 Console.WriteLine($"Starting from {args[0]}");
 
-                // Start from exe, wait for the bootstrap to end
                 try
                 {
                     var fh4process = Process.Start(new ProcessStartInfo()
@@ -63,16 +62,21 @@ namespace ForzaDBLoadPatcher
                         FileName = args[0]
                     });
 
-                    fh4process.WaitForExit();
+                    bool hasExited = fh4process.WaitForExit(10000);
+                    if (hasExited)
+                    {
+                        // Probably started genuine steam exe
+                        Console.WriteLine("FH4 process has exited, probably steam bootstrap/restarting.");
+
+                        // Wait a bit until it has at least started
+                        Thread.Sleep(3000);
+                    }
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine($"Failed to start FH4: {e.Message}");
                     return;
                 }
-
-                Thread.Sleep(3000);
-                // By now, the actual process should have booted
             }
             else
             {
@@ -111,7 +115,7 @@ namespace ForzaDBLoadPatcher
             var processes = Process.GetProcessesByName(FH4ProcessName);
             if (processes.Length > 0)
             {
-                Console.WriteLine("Forza exists, killed it");
+                Console.WriteLine("Forza running, killed it");
                 processes[0].Kill();
                 Thread.Sleep(3000);
             }
