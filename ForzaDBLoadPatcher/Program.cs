@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -36,116 +37,128 @@ namespace ForzaDBLoadPatcher
             Console.WriteLine("-----------------------------");
             Console.WriteLine("NOTE: Remember to revert to the original .slt file if not booting through this!");
 
-            KillIfExists();
-
-            if (args.Length > 0 && !string.IsNullOrEmpty(args[0]))
+            try
             {
-                if (!File.Exists(args[0]))
-                {
-                    Console.WriteLine($"Executable file '{args[0]}' does not exist");
-                    return;
-                }
+                KillIfExists();
 
-                if (!args[0].EndsWith(".exe"))
+                if (args.Length > 0 && !string.IsNullOrEmpty(args[0]))
                 {
-                    Console.WriteLine($"Invalid file provided");
-                    return;
-                }
-
-                Console.WriteLine($"Starting from {args[0]}");
-
-                try
-                {
-                    var fh4process = Process.Start(new ProcessStartInfo()
+                    if (!File.Exists(args[0]))
                     {
-                        WorkingDirectory = Path.GetDirectoryName(args[0]),
-                        FileName = args[0]
-                    });
-
-                    bool hasExited = fh4process.WaitForExit(10000);
-                    if (hasExited)
-                    {
-                        // Probably started genuine steam exe
-                        Console.WriteLine("FH4 process has exited, probably steam bootstrap/restarting.");
-
-                        // Wait a bit until it has at least started
-                        Thread.Sleep(3000);
+                        Console.WriteLine($"Executable file '{args[0]}' does not exist");
+                        return;
                     }
+
+                    if (!args[0].EndsWith(".exe"))
+                    {
+                        Console.WriteLine($"Invalid file provided");
+                        return;
+                    }
+
+
+                    BootFromPath(args[0]);
                 }
-                catch (Exception e)
+                else
                 {
-                    Console.WriteLine($"Failed to start FH4: {e.Message}");
-                    return;
+                    BootFromSteam();
+                }
+
+                int attempts = 100;
+                while (attempts > 0)
+                {
+                    var processes = Process.GetProcessesByName(FH4ProcessName);
+                    if (processes.Length > 0)
+                    {
+                        Console.WriteLine("ForzaHorizon4 detected");
+                        Process process = processes[0];
+                        Patch(process);
+                        return;
+                    }
+
+                    Thread.Sleep(200);
+                    attempts--;
                 }
             }
-            else
+            catch (Exception e)
             {
-                Console.WriteLine("Attempting to start FH4 from steam");
-                Console.WriteLine("NOTE: Provide executable path to start from an executable instead");
-
-                var steamProcess = Process.Start(new ProcessStartInfo()
-                {
-                    FileName = @$"steam://rungameid/{FH4SteamAppId}",
-                    UseShellExecute = true,
-                    Verb = "open"
-                });
-            }
-
-            int attempts = 100;
-            while (attempts > 0)
-            {
-                var processes = Process.GetProcessesByName(FH4ProcessName);
-                if (processes.Length > 0)
-                {
-                    Console.WriteLine("ForzaHorizon4 detected");
-                    Process process = processes[0];
-                    ProcessForza4(process);
-                    return;
-                }
-
-                Thread.Sleep(200);
-                attempts--;
+                Console.WriteLine($"Error: {e.Message}");
+                return;
             }
 
             Console.WriteLine("Failed to start and patch FH4, aborting.");
         }
 
-        static void KillIfExists()
+        /// <summary>
+        /// Boots forza from the specified path
+        /// </summary>
+        /// <param name="path"></param>
+        static void BootFromPath(string path)
         {
-            var processes = Process.GetProcessesByName(FH4ProcessName);
-            if (processes.Length > 0)
+            Console.WriteLine($"Starting from {path}");
+            var fh4process = Process.Start(new ProcessStartInfo()
             {
-                Console.WriteLine("Forza running, killed it");
-                processes[0].Kill();
+                WorkingDirectory = Path.GetDirectoryName(path),
+                FileName = path
+            });
+
+
+            ProcessModule mainModule = fh4process.MainModule;
+            IntPtr processHandle = OpenProcess(PROCESS_ALL_ACCESS, false, fh4process.Id);
+
+            // Non-genuine versions might be unpacked rather quickly, check for it
+            bool hasExited = fh4process.WaitForExit(1500);
+            if (!hasExited)
+            {
+                if (IsUnpacked(processHandle, mainModule.BaseAddress))
+                {
+                    Console.WriteLine("FH4 is running and already unpacked, proceed to immediate patch");
+                    Patch(fh4process);
+                    return;
+                }
+            }
+
+            hasExited = fh4process.WaitForExit(10000);
+            if (hasExited)
+            {
+                // Probably started genuine steam exe
+                Console.WriteLine("FH4 process has exited, probably steam bootstrap/restarting.");
+
+                // Wait a bit until it has at least started
                 Thread.Sleep(3000);
             }
         }
 
-        static void ProcessForza4(Process process)
+        /// <summary>
+        /// Boots forza from steam
+        /// </summary>
+        static void BootFromSteam()
+        {
+            Console.WriteLine("Attempting to start FH4 from steam");
+            Console.WriteLine("NOTE: Provide executable path to start from an executable instead");
+
+            var steamProcess = Process.Start(new ProcessStartInfo()
+            {
+                FileName = @$"steam://rungameid/{FH4SteamAppId}",
+                UseShellExecute = true,
+                Verb = "open"
+            });
+        }
+
+        /// <summary>
+        /// Waits for the process to be unpacked and patches it
+        /// </summary>
+        /// <param name="process"></param>
+        static void Patch(Process process)
         {
             Console.WriteLine("Applying patch");
             ProcessModule mainModule = process.MainModule;
             IntPtr baseAddress = mainModule.BaseAddress;
             IntPtr processHandle = OpenProcess(PROCESS_ALL_ACCESS, false, process.Id);
 
-            int bytesRead = 0;
-            byte[] buffer = new byte[0x07]; // cmp     byte ptr [rax+2EF4h], 0
-            if (!ReadProcessMemory((int)processHandle, baseAddress + FH4Address, buffer, buffer.Length, ref bytesRead))
-            {
-                Console.WriteLine("Failed to read process memory");
-                return;
-            }
-
             while (true)
             {
                 // Wait for arxan unpack
-                if (!ReadProcessMemory((int)processHandle, baseAddress + FH4Address, buffer, buffer.Length, ref bytesRead))
-                {
-                    Console.WriteLine("Failed to read process memory");
-                    return;
-                }
-
-                if (buffer[6] == 0)
+                if (IsUnpacked(processHandle, baseAddress))
                 {
                     /* change "usegamedbencryption" command line arg flag check to pass as a no
 
@@ -155,13 +168,13 @@ namespace ForzaDBLoadPatcher
                               command line arg parsing is disabled in retail builds, but all the flags seem to remain 
                     */
 
-                    // call    GetAppCommandLineParameters
-                    buffer[6] = 0x01; // cmp     byte ptr [rax+2EF4h], 0  --> cmp     byte ptr [rax+2EF4h], 1
+                    // call    GetAppCommandLineParameters 
+                    byte[] cmp = new byte[] { 0x80, 0xb8, 0xf4, 0x2e, 0x00, 0x00, 0x01 };  // cmp     byte ptr [rax+2EF4h], 0  --> cmp     byte ptr [rax+2EF4h], 1
                     // jz      loc_7FF7E51DC466
 
                     // TODO maybe: same function has another command line arg check to read from 'game:\media\db\patch\', may be worth enabling in the future
 
-                    if (!WriteProcessMemory(processHandle, baseAddress + FH4Address, buffer, buffer.Length, out IntPtr lpNumberOfBytesWritten))
+                    if (!WriteProcessMemory(processHandle, baseAddress + FH4Address, cmp, cmp.Length, out IntPtr lpNumberOfBytesWritten))
                     {
                         Console.WriteLine("Failed to write process memory");
                         return;
@@ -171,8 +184,8 @@ namespace ForzaDBLoadPatcher
                     Thread.Sleep(20000);
 
                     Console.WriteLine("Reverting edit to avoid game crash due to possible module verification");
-                    buffer[6] = 0x00;
-                    if (!WriteProcessMemory(processHandle, baseAddress + FH4Address, buffer, buffer.Length, out _))
+                    cmp[6] = 0x00;
+                    if (!WriteProcessMemory(processHandle, baseAddress + FH4Address, cmp, cmp.Length, out _))
                     {
                         Console.WriteLine("Failed to write process memory");
                         return;
@@ -186,5 +199,40 @@ namespace ForzaDBLoadPatcher
 
             Console.WriteLine("Done.");
         }
+
+        /// <summary>
+        /// Checks and kills forza if running
+        /// </summary>
+        static void KillIfExists()
+        {
+            var processes = Process.GetProcessesByName(FH4ProcessName);
+            if (processes.Length > 0)
+            {
+                Console.WriteLine("Forza running, killed it");
+                processes[0].Kill();
+                Thread.Sleep(3000);
+            }
+        }
+
+        /// <summary>
+        /// Checks if the process is unpacked in memory incl. arxan
+        /// </summary>
+        /// <param name="processHandle"></param>
+        /// <param name="baseAddress"></param>
+        /// <returns></returns>
+        static bool IsUnpacked(IntPtr processHandle, IntPtr baseAddress)
+        {
+            int bytesRead = 0;
+            byte[] buffer = new byte[0x07]; // cmp     byte ptr [rax+2EF4h], 0
+            if (!ReadProcessMemory((int)processHandle, baseAddress + FH4Address, buffer, buffer.Length, ref bytesRead))
+            {
+                Console.WriteLine("Failed to read process memory");
+                return false;
+            }
+
+            bool unpacked = buffer[5] == 0 && buffer[6] == 0;
+            return unpacked;
+        }
+
     }
 }
