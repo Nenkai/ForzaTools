@@ -7,7 +7,7 @@ Encryption is not possible for certain files - asymetric encryption is used and 
 **Keys are not currently included in this repository.** This should be used as a reference instead.
 
 ## BXML
-Also contains a BXML (Binary XML) to XML converter.
+Also contains a BXML <-> XML converter.
 
 ## History
 Made solely by me around mid-2022, making it public as it has mostly been figured by other people recently and publicly, aswell as for previous games. Keys for FH5 have not been changed since.
