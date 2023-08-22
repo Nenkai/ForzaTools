@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.IO;
-using System.IO.Compression;
 
 using Syroot.BinaryData;
 
 using ICSharpCode.SharpZipLib.Zip.Compression.Streams;
+using SharpCompress.Compressors.Deflate;
 
 namespace PlaygroundMiniZip
 {
@@ -233,11 +233,14 @@ namespace PlaygroundMiniZip
         {
             if (method == 8) // Deflate
             {
-                // For some reason, c#'s DeflateStream works in later versions, but doesn't in older
+                // For some reason, c#'s DeflateStream works in later versions, but doesn't in older - even then it fails on some chunks
+                // ICSharpCode only works at all in old versions
+                // SharpCompress works correctly but only in new versions
+
                 if (Version == 101)
-                    return new DeflateStream(_baseStream, CompressionMode.Decompress);
+                    return new SharpCompress.Compressors.Deflate.DeflateStream(_baseStream, SharpCompress.Compressors.CompressionMode.Decompress);
                 else
-                    return new InflaterInputStream(_baseStream); // Only works for old versions
+                    return new InflaterInputStream(_baseStream);
             }
             else if (method == 22)
                 throw new NotSupportedException("Method 22 (deflate + tfit) for minizip is not supported");
