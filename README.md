@@ -26,6 +26,10 @@ Allows the game to run decrypted databases (currently FH4 only)
 
 Various utilities (hashing primarily)
 
+## Binary Templates
+
+https://github.com/Nenkai/010GameTemplates/tree/main/Forza
+
 ----
 
 Code is under MIT License. If you're using this in any shape, credits are appreciated
