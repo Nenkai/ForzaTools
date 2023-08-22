@@ -1,0 +1,274 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+using System.Buffers;
+using System.Buffers.Binary;
+using System.IO;
+
+using Syroot.BinaryData;
+
+using ICSharpCode.SharpZipLib.Zip.Compression.Streams;
+
+namespace PlaygroundMiniZip
+{
+    /// <summary>
+    /// Playground Minizip file (disposable object)
+    /// </summary>
+    public class MiniZip : IDisposable
+    {
+        /* This file serves for streaming - it does not contain any file names, it is addressed by file index.
+         Instead, type of each content is provided in a linked ChunkMap file when a chunk is streamed in. */
+
+        public const uint MAGIC = 0x505A4750; // PGZP
+        public uint Version { get; private set; } // 100, 101 FH5
+
+        public uint NumDirEntries { get; private set; }
+        public uint NumFolders { get; private set; }
+        public uint FilesPerChunk { get; private set; }
+        public uint NumSubChunks { get; private set; }
+
+        public List<uint> Indices { get; } = new List<uint>();
+        public List<MiniZipChunk> SubChunks { get; set; } = new List<MiniZipChunk>();
+
+        /// <summary>
+        /// Chunk map with entries for each minizip file
+        /// </summary>
+        public ChunkMap ChunkMap { get; set; }
+
+        /// <summary>
+        /// Empty, used to flag end of zip, to calculate the last file's size
+        /// </summary>
+        public MiniZipFileEntry LastEntry { get; private set; }
+
+        private Stream _baseStream;
+        private StreamWriter _extractLogStream;
+        private string _name;
+
+        public MiniZip(string path)
+        {
+            Load(path);
+
+            _name = Path.GetFileNameWithoutExtension(path);
+            if (_name.StartsWith("GeoChunk") && int.TryParse(_name.AsSpan("GeoChunk".Length), out int geoChunkId))
+            {
+                string dir = Path.GetDirectoryName(path);
+                string chunkMapPath = Path.Combine(dir, $"ChunkMap{geoChunkId}.dat");
+
+                if (!File.Exists(chunkMapPath))
+                    throw new Exception($"Chunk Map file '{chunkMapPath}' linked to geochunk file was not found");
+
+                LoadChunkMap(chunkMapPath);
+            }
+
+            if (ChunkMap is null)
+                throw new Exception($"Chunk Map file linked to geochunk file was not loaded, make sure that the zip file is appropriately named");
+
+        }
+
+        private void LoadChunkMap(string path)
+        { 
+            using var fs = new FileStream(path, FileMode.Open);
+
+            ChunkMap = new ChunkMap();
+            ChunkMap.Load(fs, NumDirEntries);
+        }
+
+        private void Load(string path)
+        {
+            _baseStream = new FileStream(path, FileMode.Open);
+            var bs = new BinaryStream(_baseStream);
+
+            ProcessHeader(bs);
+        }
+
+        private void ProcessHeader(BinaryStream bs)
+        {
+            if (bs.ReadUInt32() != MAGIC)
+                throw new InvalidDataException("Not a minizip file (magic did not match).");
+
+            Version = bs.ReadUInt32();
+
+            uint folderIndicesOffset = bs.ReadUInt32();
+            NumDirEntries = bs.ReadUInt32();
+            NumFolders = bs.ReadUInt32();
+            FilesPerChunk = bs.ReadUInt32();
+            NumSubChunks = bs.ReadUInt32();
+            bs.ReadUInt32();
+
+            // Actually calculated that way
+            uint totalSizeIndices = sizeof(uint) * NumFolders + 4;
+            if (((sizeof(uint) * (byte)NumFolders + 4) % 8) != 0)
+                totalSizeIndices = sizeof(uint) * NumFolders + 8;
+
+            bs.Position = folderIndicesOffset;
+            for (int i = 0; i < totalSizeIndices / 4; i++)
+                Indices.Add(bs.ReadUInt32());
+
+            long numFiles = NumDirEntries;
+            int idx = 0;
+            for (int i = 0; i < NumSubChunks; i++)
+            {
+                var chunk = new MiniZipChunk();
+                chunk.Index = i;
+                chunk.DataStartOffset = bs.ReadUInt64();
+
+                int filesThisChunk = (int)Math.Min(FilesPerChunk, numFiles);
+                for (int j = 0; j < filesThisChunk; j++)
+                {
+                    var file = new MiniZipFileEntry();
+                    file.Read(bs, Version);
+                    file.Index = idx;
+                    file.ChunkFileIndex = j;
+                    file.ParentChunk = chunk;
+                    file.DataOffset = chunk.DataStartOffset + file.RelativeDataOffset;
+                    chunk.Entries.Add(file);
+
+                    idx++;
+                }
+
+                numFiles -= filesThisChunk;
+                SubChunks.Add(chunk);
+            }
+
+            LastEntry = new MiniZipFileEntry();
+            LastEntry.Read(bs, Version);
+
+            CalculateCompressedSizes();
+        }
+
+        /// <summary>
+        /// Calculates the size of each compressed file
+        /// </summary>
+        private void CalculateCompressedSizes()
+        {
+            for (int i = 0; i < NumDirEntries; i++)
+            {
+                var info = GetFileEntry(i);
+                if (info.CompressMethod == 0)
+                    continue;
+
+                var next = i < NumDirEntries - 1 ? GetFileEntry(i + 1) : LastEntry;
+
+                info.CompressFileSize = (uint)(next.DataOffset - info.DataOffset);
+                info.CompressFileSize -= info.Padding;
+            }
+        }
+
+        public void ExtractFile(int index, string outputDir, bool log = false)
+        {
+            if (log && _extractLogStream is null)
+                _extractLogStream = new StreamWriter($"{_name}.txt");
+
+            var info = GetFileEntry(index);
+            ChunkMapEntry mapEntry = ChunkMap.Entries[index];
+
+            Directory.CreateDirectory($"{outputDir}/{_name}/{info.ParentDirIndex}");
+
+            string extension = GetExtension(mapEntry.Type);
+            string outputName = $"{outputDir}/{_name}/{info.ParentDirIndex}/{info.Index}.{extension}";
+
+            using (var output = new FileStream(outputName, FileMode.Create))
+            {
+                _baseStream.Position = (long)info.DataOffset;
+                Stream processorStream = GetDecompressor(_baseStream, info.CompressMethod);
+
+                const int BufferSize = 0x20000;
+                byte[] buffer = ArrayPool<byte>.Shared.Rent(BufferSize);
+
+                long rem = info.uncompressFileSize;
+                while (rem > 0)
+                {
+                    int chunk = (int)Math.Min(rem, BufferSize);
+                    processorStream.Read(buffer, 0, chunk);
+                    output.Write(buffer, 0, chunk);
+
+                    rem -= chunk;
+                }
+
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
+
+            // Rename if we can based on contents
+            if (mapEntry.Type == ResourceContentType.Procedural || mapEntry.Type == ResourceContentType.PhysicsTemplate)
+            {
+                string fileName;
+                using (var fs = new FileStream(outputName, FileMode.Open))
+                using (var bs = new BinaryStream(fs))
+                    fileName = bs.ReadString(StringCoding.Int32CharCount);
+
+                string newPath = $"{outputDir}/{_name}/{info.ParentDirIndex}/{info.Index}_{fileName}.{GetExtension(mapEntry.Type)}";
+                File.Move(outputName, newPath, overwrite: true);
+                outputName = newPath;
+            }
+
+            ExtractLog($"{outputName}|{info.ParentDirIndex}");
+        }
+
+        public MiniZipFileEntry GetFileEntry(int index)
+        {
+            if (index < 0 || index > NumDirEntries)
+                throw new IndexOutOfRangeException("File index is out of range");
+
+            int chunkIndex = (int)(index / FilesPerChunk);
+            int indexInChunk = (int)(index % FilesPerChunk);
+            MiniZipChunk chunk = SubChunks[chunkIndex];
+            return chunk.Entries[indexInChunk];
+        }
+
+        private Stream GetDecompressor(Stream baseStream, int method)
+        {
+            if (method == 8) // Deflate
+                return new InflaterInputStream(_baseStream);
+            else if (method == 22)
+                throw new NotSupportedException("Method 22 (deflate + tfit) for minizip is not supported");
+            else
+                return baseStream;
+        }
+
+        private string GetExtension(ResourceContentType contentType)
+        {
+            return contentType switch
+            {
+                ResourceContentType.Procedural => "pgeo",
+                ResourceContentType.PhysicsTemplate => "phys",
+                ResourceContentType.AIOpenWorldBlock => "owb",
+                ResourceContentType.ModelBin => "modelbin",
+                ResourceContentType.Texture => "pb",
+                ResourceContentType.ModelGr2 => "gr2",
+                ResourceContentType.TriggerZone => "tz",
+                ResourceContentType.VoxelGIPack => "zip",
+                ResourceContentType.AudioSoundscape => "soundscape",
+                ResourceContentType.AudioSoundBank => "bank",
+                ResourceContentType.LightBlock => "lightblock",
+                ResourceContentType.PVSZone => "pvsz",
+                ResourceContentType.WaterDepth => "dds",
+                ResourceContentType.HavokNavMesh => "hkx",
+                ResourceContentType.MegaTextureChunk => "mtxmoddxt",
+                ResourceContentType.MegaTextureSource => "dxt",
+                ResourceContentType.ProceduralMap => "mtp",
+                ResourceContentType.IndirectLight => "gipack",
+                ResourceContentType.MegaTextureSourceHQ => "hqdxt",
+                ResourceContentType.VolumetricFog => "tdft",
+                ResourceContentType.VolumetricFogTexture => "fvt",
+                ResourceContentType.Unk28 => "predeform",
+                _ => $"unk{(int)contentType}",
+            };
+        }
+
+        private void ExtractLog(string message)
+        {
+            Console.WriteLine(message);
+            _extractLogStream?.WriteLine(message);
+        }
+
+
+        public void Dispose()
+        {
+            _baseStream?.Dispose();
+            _extractLogStream?.Dispose();
+        }
+    }
+}
