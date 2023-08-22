@@ -2,6 +2,8 @@
 
 A set of tools to work around Forza games.
 
+Compiled builds can be found inside the [Releases](https://github.com/Nenkai/ForzaTools/releases) page.
+
 ## ForzaDecryptor
 
 Decrypts FH5's TransformIT encrypted files - zips, files and game database.
@@ -25,6 +27,10 @@ Allows the game to run decrypted databases (currently FH4 only)
 ## ForzaUtils
 
 Various utilities (hashing primarily)
+
+## PlaygroundMiniZip
+
+Extracts files out of PGZP/Minizip files.
 
 ## Binary Templates
 
