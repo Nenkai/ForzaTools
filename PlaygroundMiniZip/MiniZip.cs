@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.IO;
+using System.IO.Compression;
 
 using Syroot.BinaryData;
 
@@ -65,7 +66,6 @@ namespace PlaygroundMiniZip
 
             if (ChunkMap is null)
                 throw new Exception($"Chunk Map file linked to geochunk file was not loaded, make sure that the zip file is appropriately named");
-
         }
 
         private void LoadChunkMap(string path)
@@ -96,7 +96,18 @@ namespace PlaygroundMiniZip
             NumFolders = bs.ReadUInt32();
             FilesPerChunk = bs.ReadUInt32();
             NumSubChunks = bs.ReadUInt32();
-            bs.ReadUInt32();
+            uint unk = bs.ReadUInt32(); // unknown, sort of used in FH5? see below
+
+            /* hdr = *(MiniZipHeader **)(m_MiniDirectoryEntries + 8);
+                v18 = (BYTE1(hdr->field_1C) & 1) + 3;
+                v19 = (char *)v16 + 4 * v12 % v13 * v18;
+                v20 = (_DWORD *)(v15 + 8i64 * v14 * ((v12 + 1) / v13));
+                dataOffset = v17 + *((unsigned int *)v19 + 2);
+                v21 = *v20 + v20[(v12 + 1) % v13 * v18 + 2] - dataOffset;
+                LODWORD(uncompressedSize) = *((_DWORD *)v19 + 3);
+                flags = *((unsigned __int16 *)v19 + 8);
+                parent = *((unsigned __int16 *)v19 + 9);
+            */
 
             // Actually calculated that way
             uint totalSizeIndices = sizeof(uint) * NumFolders + 4;
@@ -221,7 +232,13 @@ namespace PlaygroundMiniZip
         private Stream GetDecompressor(Stream baseStream, int method)
         {
             if (method == 8) // Deflate
-                return new InflaterInputStream(_baseStream);
+            {
+                // For some reason, c#'s DeflateStream works in later versions, but doesn't in older
+                if (Version == 101)
+                    return new DeflateStream(_baseStream, CompressionMode.Decompress);
+                else
+                    return new InflaterInputStream(_baseStream); // Only works for old versions
+            }
             else if (method == 22)
                 throw new NotSupportedException("Method 22 (deflate + tfit) for minizip is not supported");
             else
