@@ -40,6 +40,11 @@ namespace PlaygroundMiniZip
         public ChunkMap ChunkMap { get; set; }
 
         /// <summary>
+        /// From ChunkContentsMiniZip if exists
+        /// </summary>
+        public List<string> Names { get; } = new List<string>();
+
+        /// <summary>
         /// Empty, used to flag end of zip, to calculate the last file's size
         /// </summary>
         public MiniZipFileEntry LastEntry { get; private set; }
@@ -62,6 +67,16 @@ namespace PlaygroundMiniZip
                     throw new Exception($"Chunk Map file '{chunkMapPath}' linked to geochunk file was not found");
 
                 LoadChunkMap(chunkMapPath);
+
+                string contentsPath = Path.Combine(dir, $"ChunkContentsMiniZip{geoChunkId}.txt");
+                if (File.Exists(contentsPath))
+                {
+                    LoadChunkContentsFile(contentsPath);
+
+                    if (Names.Count != NumDirEntries)
+                        throw new Exception($"Mismatched number of files in ChunkContentsMiniZip{geoChunkId}.txt with minizip (files: txt: {Names.Count}, minizip: {NumDirEntries}). " +
+                            $"ChunkContentsMiniZip may be incorrect or not linked to the correct minizip, try without ChunkContentsMiniZip.");
+                }
             }
 
             if (ChunkMap is null)
@@ -74,6 +89,29 @@ namespace PlaygroundMiniZip
 
             ChunkMap = new ChunkMap();
             ChunkMap.Load(fs, NumDirEntries);
+        }
+
+        private void LoadChunkContentsFile(string path)
+        {
+            using var fs = new StreamReader(path);
+
+            int index = 0;
+            while (!fs.EndOfStream)
+            {
+                string line = fs.ReadLine();
+                if (string.IsNullOrEmpty(line))
+                    continue;
+
+                line = line.Replace("<PREZIPPED>", "");
+                line = line.Replace("d:\\", "");
+
+                string[] spl = line.Split("|");
+                if (spl.Length != 2)
+                    throw new InvalidDataException($"Invalid ChunkContentsMiniZip file - line {index + 1} was invalid");
+
+                Names.Add(spl[0]);
+                index++;
+            }
         }
 
         private void Load(string path)
@@ -176,10 +214,19 @@ namespace PlaygroundMiniZip
             var info = GetFileEntry(index);
             ChunkMapEntry mapEntry = ChunkMap.Entries[index];
 
-            Directory.CreateDirectory($"{outputDir}/{_name}/{info.ParentDirIndex}");
+            string sourceFileName = GetFileNameIfExists(index);
+            string geoChunkDir = Path.Combine(outputDir, _name);
+            string outputName;
 
-            string extension = GetExtension(mapEntry.Type);
-            string outputName = $"{outputDir}/{_name}/{info.ParentDirIndex}/{info.Index}.{extension}";
+            if (!string.IsNullOrEmpty(sourceFileName))
+                outputName = Path.Combine(geoChunkDir, sourceFileName);
+            else
+            {
+                string extension = GetExtension(mapEntry.Type);
+                outputName = Path.Combine(geoChunkDir, info.ParentDirIndex.ToString(), $"{info.Index}.{extension}");
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(outputName));
 
             using (var output = new FileStream(outputName, FileMode.Create))
             {
@@ -202,17 +249,20 @@ namespace PlaygroundMiniZip
                 ArrayPool<byte>.Shared.Return(buffer);
             }
 
-            // Rename if we can based on contents
-            if (mapEntry.Type == ResourceContentType.Procedural || mapEntry.Type == ResourceContentType.PhysicsTemplate)
+            if (string.IsNullOrEmpty(sourceFileName))
             {
-                string fileName;
-                using (var fs = new FileStream(outputName, FileMode.Open))
-                using (var bs = new BinaryStream(fs))
-                    fileName = bs.ReadString(StringCoding.Int32CharCount);
+                // Rename if we can based on contents
+                if (mapEntry.Type == ResourceContentType.Procedural || mapEntry.Type == ResourceContentType.PhysicsTemplate)
+                {
+                    string fileName;
+                    using (var fs = new FileStream(outputName, FileMode.Open))
+                    using (var bs = new BinaryStream(fs))
+                        fileName = bs.ReadString(StringCoding.Int32CharCount);
 
-                string newPath = $"{outputDir}/{_name}/{info.ParentDirIndex}/{info.Index}_{fileName}.{GetExtension(mapEntry.Type)}";
-                File.Move(outputName, newPath, overwrite: true);
-                outputName = newPath;
+                    string newPath = $"{outputDir}/{_name}/{info.ParentDirIndex}/{info.Index}_{fileName}.{GetExtension(mapEntry.Type)}";
+                    File.Move(outputName, newPath, overwrite: true);
+                    outputName = newPath;
+                }
             }
 
             ExtractLog($"{outputName}|{info.ParentDirIndex}");
@@ -227,6 +277,17 @@ namespace PlaygroundMiniZip
             int indexInChunk = (int)(index % FilesPerChunk);
             MiniZipChunk chunk = SubChunks[chunkIndex];
             return chunk.Entries[indexInChunk];
+        }
+
+        private string GetFileNameIfExists(int index)
+        {
+            if (Names.Count == 0)
+                return null;
+
+            if (index < 0 || index > Names.Count)
+                return null;
+
+            return Names[index];
         }
 
         private Stream GetDecompressor(Stream baseStream, int method)
