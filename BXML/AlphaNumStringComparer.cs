@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BXML
+namespace ForzaTools.BinaryXML
 {
     public class AlphaNumStringComparer : IComparer<string>
     {

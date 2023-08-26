@@ -1,6 +1,6 @@
 ﻿using System.Xml;
 
-namespace BXML
+namespace ForzaTools.BinaryXML
 {
     internal class Program
     {

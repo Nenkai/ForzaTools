@@ -223,7 +223,7 @@ namespace PlaygroundMiniZip
             else
             {
                 string extension = GetExtension(mapEntry.Type);
-                outputName = Path.Combine(geoChunkDir, info.ParentDirIndex.ToString(), $"{info.Index}.{extension}");
+                outputName = Path.Combine(geoChunkDir, $"{info.Index}");
             }
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputName));

@@ -9,7 +9,7 @@ using System.Xml;
 using Syroot.BinaryData;
 using System.Xml.Linq;
 
-namespace BXML
+namespace ForzaTools.BinaryXML
 {
     public class BXML
     {
