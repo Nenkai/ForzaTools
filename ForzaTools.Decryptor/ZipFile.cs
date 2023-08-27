@@ -9,7 +9,7 @@ using Syroot.BinaryData;
 using ICSharpCode.SharpZipLib.Zip.Compression;
 using ICSharpCode.SharpZipLib.Zip.Compression.Streams;
 
-namespace ForzaDecryptor
+namespace ForzaTools.Decryptor
 {
     internal class ZipFile
     {

@@ -23,6 +23,17 @@ public abstract class BundleBlob
 
     public List<BundleMetadata> Metadatas { get; set; } = new List<BundleMetadata>();
 
+    public BundleMetadata GetMetadataByTag(uint tag)
+    {
+        foreach (var metadata in Metadatas)
+        {
+            if (metadata.Tag == tag)
+                return metadata;
+        }
+
+        return null;
+    }
+
     public virtual void Read(BinaryStream bs, long baseBundleOffset)
     {
         Tag = bs.ReadUInt32();
@@ -42,7 +53,7 @@ public abstract class BundleBlob
             uint metadataTag = bs.ReadUInt32();
             bs.Position -= 4;
 
-            BundleMetadata metadata = GetMetadataByTag(metadataTag);
+            BundleMetadata metadata = GetMetadataObjectByTag(metadataTag);
             metadata.Read(bs);
 
             Metadatas.Add(metadata);
@@ -56,7 +67,7 @@ public abstract class BundleBlob
 
     public abstract void SerializeBlobData(BinaryStream bs);
 
-    private BundleMetadata GetMetadataByTag(uint tag)
+    private BundleMetadata GetMetadataObjectByTag(uint tag)
     {
         return tag switch
         {

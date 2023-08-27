@@ -1,4 +1,4 @@
-﻿namespace ForzaUtils
+﻿namespace ForzaTools.Utils
 {
     /// <summary>
     /// From Reverse engineered code, used in .str files

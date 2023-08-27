@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ForzaDecryptor
+namespace ForzaTools.Decryptor
 {
     public class ZipEntry
     {

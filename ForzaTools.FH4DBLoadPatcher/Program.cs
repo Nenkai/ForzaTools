@@ -4,7 +4,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace ForzaDBLoadPatcher
+namespace ForzaTools.FH4DBLoadPatcher
 {
     // Quick and sloppy tool which will not even check if steam/FH4 is installed
     // Made in like 15 minutes so eh

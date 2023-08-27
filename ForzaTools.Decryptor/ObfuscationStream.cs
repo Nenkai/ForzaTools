@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using System.Buffers.Binary;
 
-namespace ForzaDecryptor
+namespace ForzaTools.Decryptor
 {
     public class ObfuscationStream : Stream
     {

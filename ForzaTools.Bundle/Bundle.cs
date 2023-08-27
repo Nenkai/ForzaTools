@@ -18,23 +18,23 @@ public class Bundle
     public List<BundleBlob> Blobs { get; set; } = new List<BundleBlob>();
 
     // Textures (swatchbin)
-    const uint TAG_BLOB_TextureContentBlob = 0x54584342; // "TXCB"
+    public const uint TAG_BLOB_TextureContentBlob = 0x54584342; // "TXCB"
 
     // Models (modelbin)
-    const uint TAG_BLOB_Skeleton = 0x536B656C; // "Skel"
-    const uint TAG_BLOB_Morph = 0x4D727068; // "Mrph"
-    const uint TAG_BLOB_Material = 0x4D617449; // "Matl"
-    const uint TAG_BLOB_Mesh = 0x4D657368; // "Mesh"
-    const uint TAG_BLOB_IndexBuffer = 0x496E6442; // "IndB"
-    const uint TAG_BLOB_VertexLayout = 0x564C6179; // "VLay"
-    const uint TAG_BLOB_VertexBuffer = 0x56657242; // "VerB"
-    const uint TAG_BLOB_MorphBuffer = 0x4D427566; // "MBuf"
-    const uint TAG_BLOB_Skin = 0x536B696E; // "Skin"
-    const uint TAG_BLOB_Model = 0x4D6F646C; // "Modl"
+    public const uint TAG_BLOB_Skeleton = 0x536B656C; // "Skel"
+    public const uint TAG_BLOB_Morph = 0x4D727068; // "Mrph"
+    public const uint TAG_BLOB_Material = 0x4D617449; // "Matl"
+    public const uint TAG_BLOB_Mesh = 0x4D657368; // "Mesh"
+    public const uint TAG_BLOB_IndexBuffer = 0x496E6442; // "IndB"
+    public const uint TAG_BLOB_VertexLayout = 0x564C6179; // "VLay"
+    public const uint TAG_BLOB_VertexBuffer = 0x56657242; // "VerB"
+    public const uint TAG_BLOB_MorphBuffer = 0x4D427566; // "MBuf"
+    public const uint TAG_BLOB_Skin = 0x536B696E; // "Skin"
+    public const uint TAG_BLOB_Model = 0x4D6F646C; // "Modl"
 
     // Materials (materialbin)
-    const uint TAG_BLOB_MaterialResource = 0x4D415449; // "MATI"
-    const uint TAG_BLOB_MaterialShaderParameter = 0x4D545052; // "MTPR"
+    public const uint TAG_BLOB_MaterialResource = 0x4D415449; // "MATI"
+    public const uint TAG_BLOB_MaterialShaderParameter = 0x4D545052; // "MTPR"
 
 
     public void Load(Stream stream)
@@ -152,6 +152,40 @@ public class Bundle
         bs.WriteUInt32((uint)Blobs.Count);
 
         bs.Position = lastBlobDataOffsetWithAlign;
+    }
+
+    public BundleBlob GetBlobByIndex(uint tag, int index)
+    {
+        int i = 0;
+        foreach (var blob in Blobs)
+        {
+            if (blob.Tag == tag)
+            {
+                if (i == index)
+                    return blob;
+
+                i++;
+            }
+        }
+
+        return default;
+    }
+
+    public BundleBlob GetBlobById(uint tag, uint index)
+    {
+        int i = 0;
+        foreach (var blob in Blobs)
+        {
+            if (blob.Tag == tag)
+            {
+                if (i == index)
+                    return blob;
+
+                i++;
+            }
+        }
+
+        return default;
     }
 
     private BundleBlob GetBlobByTag(uint tag)

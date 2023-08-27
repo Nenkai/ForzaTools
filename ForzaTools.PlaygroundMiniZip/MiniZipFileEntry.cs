@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 using Syroot.BinaryData;
 
-namespace PlaygroundMiniZip
+namespace ForzaTools.PlaygroundMiniZip
 {
     public class MiniZipFileEntry
     {

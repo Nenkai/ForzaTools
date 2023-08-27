@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PlaygroundMiniZip
+namespace ForzaTools.PlaygroundMiniZip
 {
     public class MiniZipChunk
     {

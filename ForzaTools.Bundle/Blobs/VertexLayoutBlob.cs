@@ -14,8 +14,75 @@ public class VertexLayoutBlob : BundleBlob
 {
     public List<string> SemanticNames { get; set; } = new();
     public List<D3D12_INPUT_LAYOUT_DESC> Elements { get; set; } = new();
-    public List<DXGI_FORMAT> OutputFormatsMaybe { get; set; } = new();
+    public List<DXGI_FORMAT> PackedFormats { get; set; } = new();
     public uint Flags { get; set; }
+
+    public D3D12_INPUT_LAYOUT_DESC GetElement(string name, int elementIndex)
+    {
+        for (int i = 0; i < Elements.Count; i++)
+        {
+            D3D12_INPUT_LAYOUT_DESC elem = Elements[i];
+            if (SemanticNames[elem.SemanticNameIndex] == name && elem.SemanticIndex == elementIndex)
+                return elem;
+        }
+
+        return null;
+    }
+
+    public int GetDataOffsetOfElement(string semantic, int semanticIndex)
+    {
+        int off = 0;
+        for (int i = 0; i < Elements.Count; i++)
+        {
+            D3D12_INPUT_LAYOUT_DESC elem = Elements[i];
+
+            if (SemanticNames[elem.SemanticNameIndex] == semantic && elem.SemanticIndex == semanticIndex)
+                return off;
+
+            off += GetSizeOfElementFormat(PackedFormats[i]);
+
+            if (i + 1 < Elements.Count && off % 4 != 0)
+            {
+                if (GetSizeOfElementFormat(PackedFormats[i + 1]) >= 4)
+                    off += off % 4;
+            }
+        }
+
+        return off;
+    }
+
+    public byte GetTotalVertexSize()
+    {
+        byte size = 0;
+        for (int i = 0; i < Elements.Count; i++)
+        {
+            D3D12_INPUT_LAYOUT_DESC elem = Elements[i];
+
+            size += GetSizeOfElementFormat(PackedFormats[i]);
+
+            if (i + 1 < Elements.Count && size % 4 != 0)
+            {
+                if (GetSizeOfElementFormat(PackedFormats[i + 1]) >= 4)
+                    size += (byte)(size % 4);
+            }
+        }
+
+        return size;
+    }
+
+
+    private static byte GetSizeOfElementFormat(DXGI_FORMAT format)
+    {
+        return format switch
+        {
+            DXGI_FORMAT.DXGI_FORMAT_R8G8_UNORM => 2,
+            DXGI_FORMAT.DXGI_FORMAT_R8G8_SINT => 2,
+            DXGI_FORMAT.DXGI_FORMAT_R24_UNORM_X8_TYPELESS => 4,
+            DXGI_FORMAT.DXGI_FORMAT_R8G8_TYPELESS => 2,
+            DXGI_FORMAT.DXGI_FORMAT_X32_TYPELESS_G8X24_UINT => 8,
+            _ => throw new Exception("Unsupported"),
+        };
+    }
 
     public override void ReadBlobData(BinaryStream bs)
     {
@@ -37,7 +104,7 @@ public class VertexLayoutBlob : BundleBlob
         if (IsAtLeastVersion(1, 0))
         {
             for (int i = 0; i < elementCount; i++)
-                OutputFormatsMaybe.Add((DXGI_FORMAT)bs.ReadInt32());
+                PackedFormats.Add((DXGI_FORMAT)bs.ReadInt32());
         }
 
         if (IsAtLeastVersion(1, 1))
@@ -60,12 +127,11 @@ public class VertexLayoutBlob : BundleBlob
 
         if (IsAtLeastVersion(1, 0))
         {
-            for (int i = 0; i < OutputFormatsMaybe.Count; i++)
-                bs.WriteInt32((int)OutputFormatsMaybe[i]);
+            for (int i = 0; i < PackedFormats.Count; i++)
+                bs.WriteInt32((int)PackedFormats[i]);
+            if (IsAtLeastVersion(1, 1))
+                bs.WriteUInt32(Flags);
         }
-
-        if (IsAtLeastVersion(1, 1))
-            bs.WriteUInt32(Flags);
     }
 }
 

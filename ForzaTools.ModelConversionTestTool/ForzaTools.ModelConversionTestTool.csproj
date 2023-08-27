@@ -1,17 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Syroot.BinaryData" Version="5.2.2" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <ProjectReference Include="..\ForzaTools.Bundle\ForzaTools.Bundle.csproj" />
     <ProjectReference Include="..\ForzaTools.Utils\ForzaTools.Utils.csproj" />
     <ProjectReference Include="..\ForzaUtils\ForzaTools.Utils.csproj" />
   </ItemGroup>

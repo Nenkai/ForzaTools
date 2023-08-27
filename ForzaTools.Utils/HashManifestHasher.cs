@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ForzaUtils
+namespace ForzaTools.Utils
 {
     internal class HashManifestHasher
     {

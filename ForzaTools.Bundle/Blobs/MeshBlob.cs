@@ -45,7 +45,21 @@ public class MeshBlob : BundleBlob
     public uint Unk9 { get; set; }
 
     public List<UnkEntry> UnkEntries { get; set; } = new List<UnkEntry>();
-    public record UnkEntry(uint a, uint b, uint c, uint d);
+    public class UnkEntry
+    {
+        public uint a;
+        public uint b;
+        public uint c;
+        public uint d;
+
+        public UnkEntry(uint a, uint b, uint c, uint d)
+        {
+            this.a = a;
+            this.b = b;
+            this.c = c;
+            this.d = d;
+        }
+    }
 
     public int VertexLayoutIndex { get; set; }
     public int UnkV4 { get; set; }

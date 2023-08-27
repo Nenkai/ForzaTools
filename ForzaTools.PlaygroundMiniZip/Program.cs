@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace PlaygroundMiniZip
+namespace ForzaTools.PlaygroundMiniZip
 {
     internal class Program
     {

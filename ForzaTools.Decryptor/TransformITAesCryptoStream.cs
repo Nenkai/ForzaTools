@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Syroot.BinaryData;
 using System.Buffers.Binary;
 
-namespace ForzaDecryptor
+namespace ForzaTools.Decryptor
 {
     public class TransformITAesCryptoStream : Stream
     {

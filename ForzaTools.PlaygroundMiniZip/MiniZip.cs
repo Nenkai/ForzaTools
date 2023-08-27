@@ -13,7 +13,7 @@ using Syroot.BinaryData;
 using ICSharpCode.SharpZipLib.Zip.Compression.Streams;
 using SharpCompress.Compressors.Deflate;
 
-namespace PlaygroundMiniZip
+namespace ForzaTools.PlaygroundMiniZip
 {
     /// <summary>
     /// Playground Minizip file (disposable object)

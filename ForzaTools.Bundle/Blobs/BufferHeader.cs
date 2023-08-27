@@ -12,33 +12,35 @@ namespace ForzaTools.Bundle.Blobs;
 
 public class BufferHeader
 {
-    public int Count;
-    public int TotalSize;
-    public byte BufferWidth;
-    public byte Pad;
-    public short Unk;
-    public int Type;
-    public byte[] Data { get; set; }
+    public ushort BufferWidth { get; set; }
+    public byte NumElements { get; set; }
+    public DXGI_FORMAT Type { get; set; }
+    public byte[][] Data { get; set; }
 
     public void Read(BinaryStream bs)
     {
-        Count = bs.ReadInt32();
-        TotalSize = bs.ReadInt32();
-        BufferWidth = bs.Read1Byte();
-        bs.Read1Byte();
-        Unk = bs.ReadInt16();
-        Type = bs.ReadInt32();
-        Data = bs.ReadBytes(Count * BufferWidth);
+        int bufferCount = bs.ReadInt32();
+        uint totalSize = bs.ReadUInt32();
+        BufferWidth = bs.ReadUInt16();
+        NumElements = bs.Read1Byte();
+        bs.Read1Byte(); // Pad?
+        Type = (DXGI_FORMAT)bs.ReadInt32();
+
+        Data = new byte[bufferCount][];
+        for (int i = 0; i < bufferCount; i++)
+            Data[i] = bs.ReadBytes(BufferWidth);
     }
 
     public void Serialize(BinaryStream bs)
     {
-        bs.WriteInt32(Count);
-        bs.WriteInt32(TotalSize);
-        bs.WriteByte(BufferWidth);
-        bs.WriteByte(0);
-        bs.WriteInt16(Unk);
-        bs.WriteInt32(Type);
-        bs.WriteBytes(Data);
+        bs.WriteInt32(Data.Length);
+        bs.WriteUInt32((uint)(Data.Length * BufferWidth));
+        bs.WriteUInt16(BufferWidth);
+        bs.WriteByte(NumElements);
+        bs.WriteByte(0); // Pad?
+        bs.WriteInt32((int)Type);
+
+        for (int i = 0; i < Data.Length; i++)
+            bs.WriteBytes(Data[i]);
     }
 }

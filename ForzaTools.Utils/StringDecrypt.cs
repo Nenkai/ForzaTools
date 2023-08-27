@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ForzaUtils
+namespace ForzaTools.Utils
 {
     public class StringDecrypt
     {
@@ -26,6 +26,29 @@ namespace ForzaUtils
             for (var i = 0; i < str.Length; i++)
             {
                 output[i] = (byte)(str[i] ^ (i + 0x26));
+            }
+
+            return output;
+        }
+
+        public static string Decrypt0x75(byte[] data)
+        {
+            string s = "";
+            for (var i = 0; i < data.Length; i++)
+            {
+                s += (char)(data[i] ^ (i + 0x75));
+            }
+
+            return s;
+        }
+
+        public static byte[] Encrypt0x75(string str)
+        {
+            byte[] output = new byte[str.Length];
+
+            for (var i = 0; i < str.Length; i++)
+            {
+                output[i] = (byte)(str[i] ^ (i + 0x75));
             }
 
             return output;

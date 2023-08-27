@@ -4,7 +4,7 @@ using System;
 using System.IO.Compression;
 using System.Buffers.Binary;
 
-namespace ForzaDecryptor;
+namespace ForzaTools.Decryptor;
 
 public class Program
 {

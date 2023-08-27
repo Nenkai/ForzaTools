@@ -3,17 +3,19 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.1.32414.318
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ForzaDecryptor", "ForzaDecryptor\ForzaDecryptor.csproj", "{FDD22F79-2EF4-4FCB-97FB-C64A244F8C8E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ForzaTools.Decryptor", "ForzaTools.Decryptor\ForzaTools.Decryptor.csproj", "{FDD22F79-2EF4-4FCB-97FB-C64A244F8C8E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ForzaTools.BinaryXML", "BXML\ForzaTools.BinaryXML.csproj", "{F6A99AE1-1BBD-429A-B176-8F9EDC31571B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ForzaTools.BinaryXML", "ForzaTools.BinaryXML\ForzaTools.BinaryXML.csproj", "{F6A99AE1-1BBD-429A-B176-8F9EDC31571B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ForzaUtils", "ForzaUtils\ForzaUtils.csproj", "{01B741AB-52E3-4F70-80D8-1CEE4BD7FFD6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ForzaTools.Utils", "ForzaTools.Utils\ForzaTools.Utils.csproj", "{01B741AB-52E3-4F70-80D8-1CEE4BD7FFD6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ForzaDBLoadPatcher", "ForzaDBLoadPatcher\ForzaDBLoadPatcher.csproj", "{5B4A56AB-9B1F-4B65-9E1F-250AD4ED225E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ForzaTools.FH4DBLoadPatcher", "ForzaTools.FH4DBLoadPatcher\ForzaTools.FH4DBLoadPatcher.csproj", "{5B4A56AB-9B1F-4B65-9E1F-250AD4ED225E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PlaygroundMiniZip", "PlaygroundMiniZip\PlaygroundMiniZip.csproj", "{E42C21C4-773B-4B46-ABCC-743D37775992}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ForzaTools.PlaygroundMiniZip", "ForzaTools.PlaygroundMiniZip\ForzaTools.PlaygroundMiniZip.csproj", "{E42C21C4-773B-4B46-ABCC-743D37775992}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ForzaTools.Bundle", "ForzaTools.Bundle\ForzaTools.Bundle.csproj", "{BA23D248-AED4-4657-AFE2-399E5D868696}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ForzaTools.Bundle", "ForzaTools.Bundle\ForzaTools.Bundle.csproj", "{BA23D248-AED4-4657-AFE2-399E5D868696}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ForzaTools.ModelConversionTestTool", "ForzaTools.ModelConversionTestTool\ForzaTools.ModelConversionTestTool.csproj", "{79806163-0941-4218-AD63-71F50819C459}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +47,10 @@ Global
 		{BA23D248-AED4-4657-AFE2-399E5D868696}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BA23D248-AED4-4657-AFE2-399E5D868696}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BA23D248-AED4-4657-AFE2-399E5D868696}.Release|Any CPU.Build.0 = Release|Any CPU
+		{79806163-0941-4218-AD63-71F50819C459}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79806163-0941-4218-AD63-71F50819C459}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79806163-0941-4218-AD63-71F50819C459}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79806163-0941-4218-AD63-71F50819C459}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
