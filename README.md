@@ -17,7 +17,7 @@ Made solely by me around mid-2022, making it public as it has mostly been figure
 
 This tool was initially private due to its nature of it affecting current supported games.
 
-## BXML
+## BinaryXML
 BXML <-> XML converter.
 
 ## ForzaDBLoadPatcher
@@ -31,6 +31,10 @@ Various utilities (hashing primarily)
 ## PlaygroundMiniZip
 
 Extracts files out of PGZP/Minizip files.
+
+## ForzaTools.Bundle
+
+Reads and serializes Bundle (Grub/.modelbin & more) files.
 
 ## Binary Templates
 
