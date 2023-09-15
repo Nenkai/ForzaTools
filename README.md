@@ -32,6 +32,10 @@ Various utilities (hashing primarily)
 
 Extracts files out of PGZP/Minizip files.
 
+## ForzaTools.ModelConversionTestTool
+
+Test tool that attempts to convert FH4 models to FH5. Not finished
+
 ## ForzaTools.Bundle
 
 Reads and serializes Bundle (Grub/.modelbin & more) files.
