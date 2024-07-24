@@ -1,7 +1,7 @@
 ﻿namespace ForzaTools.ModelConversionTestTool;
 
-using ForzaTools.Bundle;
-using ForzaTools.Bundle.Blobs;
+using ForzaTools.Bundles;
+using ForzaTools.Bundles.Blobs;
 using ForzaTools.Utils;
 
 internal class Program

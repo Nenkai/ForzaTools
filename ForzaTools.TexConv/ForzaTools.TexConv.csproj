@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BCnEncoder.Net" Version="2.1.0" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DurangoTypes\DurangoTypes.csproj" />
+    <ProjectReference Include="..\ForzaTools.Bundles\ForzaTools.Bundles.csproj" />
+    <ProjectReference Include="..\ForzaTools.Bundle\ForzaTools.Bundles.csproj" />
+    <ProjectReference Include="..\ForzaTools.Utils\ForzaTools.Utils.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="xg.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

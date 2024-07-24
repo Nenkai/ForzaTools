@@ -9,7 +9,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 
-namespace ForzaTools.Bundle.Blobs;
+namespace ForzaTools.Bundles.Blobs;
 
 public class SkeletonBlob : BundleBlob
 {

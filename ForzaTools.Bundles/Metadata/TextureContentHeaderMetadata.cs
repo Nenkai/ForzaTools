@@ -6,19 +6,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ForzaTools.Bundle.Metadata;
+namespace ForzaTools.Bundles.Metadata;
 
-public class NameMetadata : BundleMetadata
+public class TextureContentHeaderMetadata : BundleMetadata
 {
-    public string Name { get; set; }
-
     public override void ReadMetadataData(BinaryStream bs)
     {
-        Name = bs.ReadString(Size);
+
     }
 
     public override void SerializeMetadataData(BinaryStream bs)
     {
-        bs.WriteString(Name, StringCoding.Raw);
+
     }
 }

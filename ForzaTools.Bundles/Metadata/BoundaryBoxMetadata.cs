@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 
 using Syroot.BinaryData;
 
-namespace ForzaTools.Bundle.Metadata;
+namespace ForzaTools.Bundles.Metadata;
 
 public class BoundaryBoxMetadata : BundleMetadata
 {

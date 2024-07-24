@@ -5,9 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Syroot.BinaryData;
-using ForzaTools.Bundle.Blobs;
+using ForzaTools.Bundles.Blobs;
 
-namespace ForzaTools.Bundle;
+namespace ForzaTools.Bundles;
 
 public class Bundle
 {
@@ -171,7 +171,7 @@ public class Bundle
         return default;
     }
 
-    public BundleBlob GetBlobById(uint tag, uint index)
+    public T GetBlobById<T>(uint tag, uint index) where T : BundleBlob
     {
         int i = 0;
         foreach (var blob in Blobs)
@@ -179,7 +179,7 @@ public class Bundle
             if (blob.Tag == tag)
             {
                 if (i == index)
-                    return blob;
+                    return (T)blob;
 
                 i++;
             }
@@ -203,6 +203,7 @@ public class Bundle
             TAG_BLOB_VertexBuffer => new VertexBufferBlob(),
             TAG_BLOB_MorphBuffer => new MorphBufferBlob(),
             TAG_BLOB_Model => new ModelBlob(),
+            TAG_BLOB_TextureContentBlob => new TextureContentBlob(),
             _ => throw new Exception($"Unimplemented tag {tag:X8}")
         };
     }

@@ -8,10 +8,11 @@ using System.Diagnostics;
 
 using Syroot.BinaryData;
 
-using ForzaTools.Bundle.Metadata;
+using ForzaTools.Bundles.Metadata;
 using static System.Reflection.Metadata.BlobBuilder;
+using System.Xml.Linq;
 
-namespace ForzaTools.Bundle;
+namespace ForzaTools.Bundles;
 
 public abstract class BundleBlob
 {
@@ -23,12 +24,14 @@ public abstract class BundleBlob
 
     public List<BundleMetadata> Metadatas { get; set; } = new List<BundleMetadata>();
 
-    public BundleMetadata GetMetadataByTag(uint tag)
+    private byte[] _data { get; set; }
+
+    public T GetMetadataByTag<T>(uint tag) where T : BundleMetadata
     {
         foreach (var metadata in Metadatas)
         {
             if (metadata.Tag == tag)
-                return metadata;
+                return (T)metadata;
         }
 
         return null;
@@ -60,7 +63,11 @@ public abstract class BundleBlob
         }
 
         bs.Position = baseBundleOffset + dataOffset;
+        _data = bs.ReadBytes((int)dataSize);
+
+        bs.Position = baseBundleOffset + dataOffset;
         ReadBlobData(bs);
+
     }
 
     public abstract void ReadBlobData(BinaryStream bs);
@@ -75,6 +82,7 @@ public abstract class BundleBlob
             BundleMetadata.TAG_METADATA_Identifier => new IdentifierMetadata(),
             BundleMetadata.TAG_METADATA_Atlas => new AtlasMetadata(),
             BundleMetadata.TAG_METADATA_BBox => new BoundaryBoxMetadata(),
+            BundleMetadata.TAG_METADATA_TextureContentHeader => new TextureContentHeaderMetadata(),
             _ => throw new NotImplementedException($"Unimplemented metadata tag {tag:X8}"),
         };
     }
@@ -103,7 +111,7 @@ public abstract class BundleBlob
             ulong metadataSize = (ulong)(lastDataPos - dataStartOffset);
             Debug.Assert(metadataSize <= ushort.MaxValue);
 
-            ushort flags = (ushort)(metadataSize << 4 | (ushort)(metadata.UnkFlag & 0b1111)); // 12 bits size, 4 bits unk
+            ushort flags = (ushort)(metadataSize << 4 | (ushort)(metadata.Version & 0b1111)); // 12 bits size, 4 bits unk
             bs.WriteUInt16(flags);
 
             Debug.Assert(relativeOffset <= ushort.MaxValue);
@@ -112,6 +120,8 @@ public abstract class BundleBlob
 
         bs.Position = lastDataPos;
     }
+
+    public byte[] GetContents() => _data;
 
     public bool IsAtMostVersion(byte versionMajor, byte versionMinor)
     {

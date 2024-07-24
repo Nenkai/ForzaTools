@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
-namespace ForzaTools.Bundle.Blobs;
+namespace ForzaTools.Bundles.Blobs;
 
-public class MorphBufferBlob : BundleBlob
+public class VertexBufferBlob : BundleBlob
 {
     public BufferHeader Header { get; set; } = new();
 

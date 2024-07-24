@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
-namespace ForzaTools.Bundle.Blobs;
+namespace ForzaTools.Bundles.Blobs;
 
 public class MaterialResourceBlob : BundleBlob
 {

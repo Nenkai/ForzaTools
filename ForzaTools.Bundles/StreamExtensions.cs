@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Numerics;
 using Syroot.BinaryData;
 
-namespace ForzaTools.Bundle
+namespace ForzaTools.Bundles
 {
     public static class StreamExtensions
     {

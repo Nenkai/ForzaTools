@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ForzaTools.Bundle.Metadata;
+namespace ForzaTools.Bundles.Metadata;
 
 public class IdentifierMetadata : BundleMetadata
 {

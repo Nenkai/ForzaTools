@@ -8,20 +8,19 @@ using System.Threading.Tasks;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
-namespace ForzaTools.Bundle.Blobs;
+namespace ForzaTools.Bundles.Blobs;
 
-public class MaterialBlob : BundleBlob
+public class IndexBufferBlob : BundleBlob
 {
-    public Bundle Bundle { get; set; }
+    public BufferHeader Header { get; set; } = new();
 
     public override void ReadBlobData(BinaryStream bs)
     {
-        Bundle = new Bundle();
-        Bundle.Load(bs);
+        Header.Read(bs);
     }
 
     public override void SerializeBlobData(BinaryStream bs)
     {
-        Bundle.Serialize(bs);
+        Header.Serialize(bs);
     }
 }

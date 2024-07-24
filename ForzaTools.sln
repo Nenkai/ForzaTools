@@ -13,9 +13,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ForzaTools.FH4DBLoadPatcher
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ForzaTools.PlaygroundMiniZip", "ForzaTools.PlaygroundMiniZip\ForzaTools.PlaygroundMiniZip.csproj", "{E42C21C4-773B-4B46-ABCC-743D37775992}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ForzaTools.Bundle", "ForzaTools.Bundle\ForzaTools.Bundle.csproj", "{BA23D248-AED4-4657-AFE2-399E5D868696}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ForzaTools.Bundles", "ForzaTools.Bundles\ForzaTools.Bundles.csproj", "{BA23D248-AED4-4657-AFE2-399E5D868696}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ForzaTools.ModelConversionTestTool", "ForzaTools.ModelConversionTestTool\ForzaTools.ModelConversionTestTool.csproj", "{79806163-0941-4218-AD63-71F50819C459}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ForzaTools.ModelConversionTestTool", "ForzaTools.ModelConversionTestTool\ForzaTools.ModelConversionTestTool.csproj", "{79806163-0941-4218-AD63-71F50819C459}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ForzaTools.TexConv", "ForzaTools.TexConv\ForzaTools.TexConv.csproj", "{AA9AA755-6AD7-4BBB-9166-9DEF3658A28E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DurangoTypes", "DurangoTypes\DurangoTypes.csproj", "{4761F5BE-DC0D-45DB-8798-36051DD939FD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +55,14 @@ Global
 		{79806163-0941-4218-AD63-71F50819C459}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{79806163-0941-4218-AD63-71F50819C459}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{79806163-0941-4218-AD63-71F50819C459}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA9AA755-6AD7-4BBB-9166-9DEF3658A28E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA9AA755-6AD7-4BBB-9166-9DEF3658A28E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA9AA755-6AD7-4BBB-9166-9DEF3658A28E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA9AA755-6AD7-4BBB-9166-9DEF3658A28E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4761F5BE-DC0D-45DB-8798-36051DD939FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4761F5BE-DC0D-45DB-8798-36051DD939FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4761F5BE-DC0D-45DB-8798-36051DD939FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4761F5BE-DC0D-45DB-8798-36051DD939FD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

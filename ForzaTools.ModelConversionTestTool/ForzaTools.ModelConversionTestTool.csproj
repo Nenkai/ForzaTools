@@ -2,15 +2,14 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ForzaTools.Bundle\ForzaTools.Bundle.csproj" />
+    <ProjectReference Include="..\ForzaTools.Bundles\ForzaTools.Bundles.csproj" />
     <ProjectReference Include="..\ForzaTools.Utils\ForzaTools.Utils.csproj" />
-    <ProjectReference Include="..\ForzaUtils\ForzaTools.Utils.csproj" />
   </ItemGroup>
 
 </Project>

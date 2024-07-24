@@ -8,22 +8,19 @@ using System.Threading.Tasks;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
-namespace ForzaTools.Bundle.Blobs;
+namespace ForzaTools.Bundles.Blobs;
 
-public class MorphBlob : BundleBlob
+public class MorphBufferBlob : BundleBlob
 {
-    public ushort Unk { get; set; }
-    public string Name { get; set; }
+    public BufferHeader Header { get; set; } = new();
 
     public override void ReadBlobData(BinaryStream bs)
     {
-        Unk = bs.ReadUInt16();
-        Name = bs.ReadString(StringCoding.Int32CharCount);
+        Header.Read(bs);
     }
 
     public override void SerializeBlobData(BinaryStream bs)
     {
-        bs.WriteUInt16(Unk);
-        bs.WriteString(Name, StringCoding.Int32CharCount);
+        Header.Serialize(bs);
     }
 }
