@@ -11,25 +11,25 @@ namespace ForzaTools.FH4DBLoadPatcher
 
     internal class Program
     {
-        const int PROCESS_WM_READ = 0x0010;
-        const int PROCESS_ALL_ACCESS = 0x1F0FFF;
+        private const int ProcessAllAccess = 0x1F0FFF;
 
         [DllImport("kernel32.dll")]
-        public static extern IntPtr OpenProcess(int dwDesiredAccess, bool bInheritHandle, int dwProcessId);
+        private static extern nint OpenProcess(int dwDesiredAccess, bool bInheritHandle, int dwProcessId);
 
         [DllImport("kernel32.dll")]
-        public static extern bool ReadProcessMemory(int hProcess,
+        private static extern bool ReadProcessMemory(int hProcess,
             IntPtr lpBaseAddress, byte[] lpBuffer, int dwSize, ref int lpNumberOfBytesRead);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern bool WriteProcessMemory(
+        private static extern bool WriteProcessMemory(
           IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer, int dwSize, out IntPtr lpNumberOfBytesWritten);
 
-        const int FH4Address = 0x305C6DE;
-        const int FH4SteamAppId = 1293830;
-        const string FH4ProcessName = "ForzaHorizon4";
+        //ForzaHorizon4.exe+305D1DE 
+        private const int Fh4Address = 0x305D1DE;
+        private const int Fh4SteamAppId = 1293830;
+        private const string Fh4ProcessName = "ForzaHorizon4";
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             Console.WriteLine("FH4 DB Load Patcher - FH4 - by Nenkai");
             Console.WriteLine("- https://github.com/Nenkai");
@@ -66,7 +66,7 @@ namespace ForzaTools.FH4DBLoadPatcher
                 int attempts = 100;
                 while (attempts > 0)
                 {
-                    var processes = Process.GetProcessesByName(FH4ProcessName);
+                    var processes = Process.GetProcessesByName(Fh4ProcessName);
                     if (processes.Length > 0)
                     {
                         Console.WriteLine("ForzaHorizon4 detected");
@@ -103,7 +103,7 @@ namespace ForzaTools.FH4DBLoadPatcher
 
 
             ProcessModule mainModule = fh4process.MainModule;
-            IntPtr processHandle = OpenProcess(PROCESS_ALL_ACCESS, false, fh4process.Id);
+            IntPtr processHandle = OpenProcess(ProcessAllAccess, false, fh4process.Id);
 
             // Non-genuine versions might be unpacked rather quickly, check for it
             bool hasExited = fh4process.WaitForExit(1500);
@@ -138,7 +138,7 @@ namespace ForzaTools.FH4DBLoadPatcher
 
             var steamProcess = Process.Start(new ProcessStartInfo()
             {
-                FileName = @$"steam://rungameid/{FH4SteamAppId}",
+                FileName = @$"steam://rungameid/{Fh4SteamAppId}",
                 UseShellExecute = true,
                 Verb = "open"
             });
@@ -148,12 +148,12 @@ namespace ForzaTools.FH4DBLoadPatcher
         /// Waits for the process to be unpacked and patches it
         /// </summary>
         /// <param name="process"></param>
-        static void Patch(Process process)
+        private static void Patch(Process process)
         {
             Console.WriteLine("Applying patch");
             ProcessModule mainModule = process.MainModule;
             IntPtr baseAddress = mainModule.BaseAddress;
-            IntPtr processHandle = OpenProcess(PROCESS_ALL_ACCESS, false, process.Id);
+            IntPtr processHandle = OpenProcess(ProcessAllAccess, false, process.Id);
 
             while (true)
             {
@@ -168,13 +168,11 @@ namespace ForzaTools.FH4DBLoadPatcher
                               command line arg parsing is disabled in retail builds, but all the flags seem to remain 
                     */
 
-                    // call    GetAppCommandLineParameters 
-                    byte[] cmp = new byte[] { 0x80, 0xb8, 0xf4, 0x2e, 0x00, 0x00, 0x01 };  // cmp     byte ptr [rax+2EF4h], 0  --> cmp     byte ptr [rax+2EF4h], 1
-                    // jz      loc_7FF7E51DC466
+                    byte[] cmp = { 0x80, 0xb8, 0xf4, 0x2e, 0x00, 0x00, 0x01 };  // cmp     byte ptr [rax+2EF4h], 0  --> cmp     byte ptr [rax+2EF4h], 1
 
                     // TODO maybe: same function has another command line arg check to read from 'game:\media\db\patch\', may be worth enabling in the future
 
-                    if (!WriteProcessMemory(processHandle, baseAddress + FH4Address, cmp, cmp.Length, out IntPtr lpNumberOfBytesWritten))
+                    if (!WriteProcessMemory(processHandle, baseAddress + Fh4Address, cmp, cmp.Length, out _))
                     {
                         Console.WriteLine("Failed to write process memory");
                         return;
@@ -185,7 +183,7 @@ namespace ForzaTools.FH4DBLoadPatcher
 
                     Console.WriteLine("Reverting edit to avoid game crash due to possible module verification");
                     cmp[6] = 0x00;
-                    if (!WriteProcessMemory(processHandle, baseAddress + FH4Address, cmp, cmp.Length, out _))
+                    if (!WriteProcessMemory(processHandle, baseAddress + Fh4Address, cmp, cmp.Length, out _))
                     {
                         Console.WriteLine("Failed to write process memory");
                         return;
@@ -205,13 +203,11 @@ namespace ForzaTools.FH4DBLoadPatcher
         /// </summary>
         static void KillIfExists()
         {
-            var processes = Process.GetProcessesByName(FH4ProcessName);
-            if (processes.Length > 0)
-            {
-                Console.WriteLine("Forza running, killed it");
-                processes[0].Kill();
-                Thread.Sleep(3000);
-            }
+            var processes = Process.GetProcessesByName(Fh4ProcessName);
+            if (processes.Length <= 0) return;
+            Console.WriteLine("Forza running, killed it");
+            processes[0].Kill();
+            Thread.Sleep(3000);
         }
 
         /// <summary>
@@ -222,16 +218,17 @@ namespace ForzaTools.FH4DBLoadPatcher
         /// <returns></returns>
         static bool IsUnpacked(IntPtr processHandle, IntPtr baseAddress)
         {
-            int bytesRead = 0;
-            byte[] buffer = new byte[0x07]; // cmp     byte ptr [rax+2EF4h], 0
-            if (!ReadProcessMemory((int)processHandle, baseAddress + FH4Address, buffer, buffer.Length, ref bytesRead))
+            var bytesRead = 0;
+            var buffer = new byte[0x07]; // cmp     byte ptr [rax+2EF4h], 0
+            
+            if (ReadProcessMemory((int)processHandle, baseAddress + Fh4Address, buffer, buffer.Length, ref bytesRead))
             {
-                Console.WriteLine("Failed to read process memory");
-                return false;
+                return buffer[5] == 0 && buffer[6] == 0;
             }
 
-            bool unpacked = buffer[5] == 0 && buffer[6] == 0;
-            return unpacked;
+            Console.WriteLine("Failed to read process memory");
+            return false;
+
         }
 
     }
