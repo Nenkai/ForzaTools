@@ -20,10 +20,4 @@
     <ProjectReference Include="..\ForzaTools.Utils\ForzaTools.Utils.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="xg.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>
