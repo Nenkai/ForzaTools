@@ -3,6 +3,7 @@
 using ForzaTools.Bundles;
 using ForzaTools.Bundles.Blobs;
 using ForzaTools.Utils;
+using ForzaTools.Shared;
 
 internal class Program
 {

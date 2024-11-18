@@ -240,7 +240,7 @@ namespace ForzaTools.PlaygroundMiniZip
                 while (rem > 0)
                 {
                     int chunk = (int)Math.Min(rem, BufferSize);
-                    processorStream.Read(buffer, 0, chunk);
+                    processorStream.ReadExactly(buffer, 0, chunk);
                     output.Write(buffer, 0, chunk);
 
                     rem -= chunk;

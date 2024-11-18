@@ -1,17 +1,19 @@
-﻿using ForzaTools.Bundles.Blobs;
-
-using Syroot.BinaryData;
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Syroot.BinaryData;
+
+using ForzaTools.Bundles.Blobs;
+using ForzaTools.Shared;
+
 namespace ForzaTools.TexConv;
 
 public class DdsHeader
 {
+    public DDSHeaderFlags Flags { get; set; }
     public int Height { get; set; }
     public int Width { get; set; }
     public int PitchOrLinearSize { get; set; }
@@ -28,7 +30,7 @@ public class DdsHeader
 
     public DXGI_FORMAT DxgiFormat { get; set; }
 
-    public byte[] ImageData { get; set; }
+    public Memory<byte> ImageData { get; set; }
 
     public void Write(Stream outStream)
     {
@@ -36,10 +38,8 @@ public class DdsHeader
 
         bs.WriteString("DDS ", StringCoding.Raw);
         bs.WriteInt32(124);    // dwSize (Struct Size)
-        bs.WriteUInt32((uint)(DDSHeaderFlags.TEXTURE)); // dwFlags
+        bs.WriteUInt32((uint)Flags); // dwFlags
         bs.WriteInt32(Height); // dwHeight
-
-        // Dirty fix, some TXS3's in GTHD have 1920 as width, but its actually 2048. Stride is correct, so use it instead.
         bs.WriteInt32(Width);
         bs.WriteInt32(PitchOrLinearSize);
         bs.WriteInt32(0);    // Depth
@@ -48,7 +48,7 @@ public class DdsHeader
         bs.WriteInt32(32); // DDSPixelFormat Header starts here - Struct Size
 
 
-        bs.WriteUInt32((uint)(FormatFlags));           // Format Flags
+        bs.WriteUInt32((uint)FormatFlags);           // Format Flags
         bs.WriteString(FourCCName, StringCoding.Raw); // FourCC
         bs.WriteInt32(RGBBitCount);         // RGBBitCount
 
@@ -57,8 +57,8 @@ public class DdsHeader
         bs.WriteUInt32(BBitMask);  // BBitMask
         bs.WriteUInt32(ABitMask);  // ABitMask
 
-        bs.WriteInt32(0x1000); // dwCaps, 0x1000 = required
-        bs.WriteBytes(new byte[16]); // dwCaps1-4
+        bs.WriteInt32(0x1000 | 0x400000 | 0x08); // dwCaps, 0x1000 = required
+        bs.WriteBytes(new byte[16]); // dwCaps2-4 + reserved
 
         if (FourCCName == "DX10")
         {
@@ -69,8 +69,7 @@ public class DdsHeader
             bs.WriteInt32(1); // arraySize
             bs.WriteInt32(0); // miscFlags2
         }
-
-        bs.Write(ImageData);
+        bs.Write(ImageData.Span);
     }
 }
 

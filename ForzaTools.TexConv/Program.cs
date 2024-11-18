@@ -1,10 +1,4 @@
-﻿using ForzaTools.Bundles;
-using ForzaTools.Bundles.Blobs;
-using ForzaTools.Bundles.Metadata;
-
-using System.Runtime.InteropServices;
-
-using DurangoTypes;
+﻿using System.Runtime.InteropServices;
 
 using BCnEncoder.Decoder;
 using BCnEncoder.Shared;
@@ -14,8 +8,18 @@ using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Formats;
+
 using Syroot.BinaryData;
+
 using ForzaTools.Bundles.Metadata.TextureContentHeaders;
+using ForzaTools.Bundles;
+using ForzaTools.Bundles.Blobs;
+using ForzaTools.Bundles.Metadata;
+using ForzaTools.Shared;
+
+using DurangoTypes;
+using BCnEncoder.Shared.ImageFiles;
+using Microsoft.Toolkit.HighPerformance;
 
 namespace ForzaTools.TexConv;
 
@@ -66,9 +70,6 @@ public unsafe class Program
 
     private static void ConvertSwatch(string bundleFile)
     {
-        if (bundleFile.Contains("defaultch2_diff"))
-            ;
-
         Bundle bundle = new Bundle();
         try
         {
@@ -123,17 +124,63 @@ public unsafe class Program
         byte[] data = txcBlob.GetContents();
         XG_FORMAT format = hdr.DetermineFormat();
 
-        Console.WriteLine($"{bundleFile}: {hdr.Width}x{hdr.Height} - {format} - {hdr.MipLevels} mips - tile mode {hdr.TileMode}");
+        Console.WriteLine($"[{Path.GetFileName(bundleFile)}] => {hdr.BaseMipWidth}x{hdr.BaseMipHeight} - {format} - {hdr.FullTextureNumMipLevels} mips (start: {hdr.BaseMipLevel}, count: {hdr.NumMips}) - tile mode {hdr.TileMode}");
 
         if (hdr.TileMode == XG_TILE_MODE.XG_TILE_MODE_2D_THIN)
         {
-            data = DurangoDetile(hdr, data);
-            if (data is null)
+            (XG_RESOURCE_LAYOUT Layout, byte[] Data)? DetiledData = DurangoDetile(hdr, data);
+            if (DetiledData is null)
                 return;
 
-            byte[] ddsFile = ToDds(data, (DXGI_FORMAT)format, hdr.Width, hdr.Height, hdr.MipLevels);
+            // We need to dealign the data.
+            // https://github.com/microsoft/DirectXTK12/blob/9de75066dd751207eae8a765e14e21ae8d81b66d/Src/ScreenGrab.cpp#L290-L296
+            // D3D12XBOX_TEXTURE_DATA_PITCH_ALIGNMENT is 1024, but it seems it only ever aligns to 256 here (i think?)
+            byte[] dealignedData = DealignDurangoTextureData(hdr, format, DetiledData);
+
+            byte[] ddsFile = ToDds(dealignedData, (DXGI_FORMAT)format, hdr.BaseMipWidth, hdr.BaseMipHeight, hdr.NumMips);
             File.WriteAllBytes(Path.ChangeExtension(bundleFile, ".dds"), ddsFile);
         }
+    }
+
+    private static byte[] DealignDurangoTextureData(DurangoTextureContentHeader hdr, XG_FORMAT format, (XG_RESOURCE_LAYOUT Layout, byte[] Data)? DetiledData)
+    {
+        uint totalSize = 0;
+        uint w = hdr.BaseMipWidth; uint h = hdr.BaseMipHeight;
+        for (int i = 0; i < hdr.FullTextureNumMipLevels; i++)
+        {
+            DxgiUtils.ComputePitch((DXGI_FORMAT)format, w, h, out ulong rowPitch, out ulong slicePitch, out ulong alignedSlicePitch);
+            totalSize += (uint)slicePitch;
+
+            w >>= 1;
+            h >>= 1;
+        }
+
+        byte[] outputData = new byte[totalSize];
+        w = hdr.BaseMipWidth; h = hdr.BaseMipHeight;
+        ulong offset = 0;
+        for (int i = 0; i < hdr.NumMips; i++)
+        {
+            DxgiUtils.ComputePitch((DXGI_FORMAT)format, w, h, out ulong rowPitch, out ulong slicePitch, out ulong alignedSlicePitch);
+
+            XG_MIPLEVEL_LAYOUT mipLayout = DetiledData.Value.Layout.Plane[0].MipLayout[i];
+
+            Span<byte> inputMip = DetiledData.Value.Data.AsSpan((int)mipLayout.OffsetBytes, (int)mipLayout.SizeBytes);
+            Span<byte> outputMip = outputData.AsSpan((int)offset, (int)slicePitch);
+
+            uint actualHeight = DxgiUtils.IsBCnFormat((DXGI_FORMAT)format) ? h / 4 : h;
+            for (int y = 0; y < actualHeight; y++)
+            {
+                Span<byte> row = inputMip.Slice((y * (int)mipLayout.PitchBytes), (int)rowPitch);
+                Span<byte> outputRow = outputMip.Slice((int)(y * (uint)rowPitch), (int)rowPitch);
+                row.CopyTo(outputRow);
+            }
+
+            w >>= 1;
+            h >>= 1;
+            offset += slicePitch;
+        }
+
+        return outputData;
     }
 
     static int roundUp(int numToRound, int multiple)
@@ -151,22 +198,28 @@ public unsafe class Program
     private static byte[] ToDds(byte[] data, DXGI_FORMAT dxgiFormat, int width, int height, int numMips)
     {
         var header = new DdsHeader();
-        header.Height = roundUp(height, 32); // TODO: Find out a better way to do this without needlessly padding the dds
-        header.Width = roundUp(width, 32);
-        //header.PitchOrLinearSize = height * width;
+        header.Height = height; // TODO: Find out a better way to do this without needlessly padding the dds
+        header.Width = width;
         header.LastMipmapLevel = numMips;
         header.FormatFlags = DDSPixelFormatFlags.DDPF_FOURCC;
         header.FourCCName = "DX10";
         header.DxgiFormat = dxgiFormat;
         header.ImageData = data;
 
+        var flags = DDSHeaderFlags.TEXTURE | DDSHeaderFlags.LINEARSIZE;
+        if (numMips > 1)
+            flags |= DDSHeaderFlags.MIPMAP;
+        header.Flags = flags;
+
+        DxgiUtils.ComputePitch(dxgiFormat, (uint)width, (uint)height, out ulong rowPitch, out _, out _);
+        header.PitchOrLinearSize = (int)rowPitch;
         using var ms = new MemoryStream();
         header.Write(ms);
 
         return ms.ToArray();
     }
 
-    private static byte[] DurangoDetile(DurangoTextureContentHeader hdr, byte[] tiledData)
+    private static (XG_RESOURCE_LAYOUT Layout, byte[] Data)? DurangoDetile(DurangoTextureContentHeader hdr, byte[] tiledData)
     {
         // For now we gotta use the xg lib for detiling, it sucks
         // It's pretty complex
@@ -174,13 +227,13 @@ public unsafe class Program
         XG_FORMAT format = hdr.DetermineFormat();
 
         XG_TEXTURE2D_DESC desc;
-        desc.Width = hdr.Width;
-        desc.Height = hdr.Height;
+        desc.Width = hdr.BaseMipWidth;
+        desc.Height = hdr.BaseMipHeight;
         desc.Format = format;
         desc.Usage = XG_USAGE.XG_USAGE_DEFAULT; // Should be default
         desc.SampleDesc.Count = 1; // Should be 1
         desc.ArraySize = hdr.Depth_NumSlice;
-        desc.MipLevels = hdr.MipLevels;
+        desc.MipLevels = hdr.NumMips;
         desc.BindFlags = (uint)XG_BIND_FLAG.XG_BIND_SHADER_RESOURCE;
         desc.MiscFlags = 0;
         desc.TileMode = hdr.TileMode;
@@ -194,8 +247,7 @@ public unsafe class Program
         }
 
         XGTextureAddressComputer computer = *compWrapper;
-        int size = Marshal.SizeOf<XG_RESOURCE_LAYOUT>();
-        nint arrPtr = Marshal.AllocHGlobal(size);
+        nint arrPtr = Marshal.AllocHGlobal(Marshal.SizeOf<XG_RESOURCE_LAYOUT>());
 
         result = computer.vt->GetResourceLayout(compWrapper, (XG_RESOURCE_LAYOUT*)arrPtr);
         if (result > 0)
@@ -217,7 +269,7 @@ public unsafe class Program
                     ulong mipSizeBytes = layout.Plane[0].MipLayout[nMip].SizeBytes;
                     ulong mipOffset = layout.Plane[0].MipLayout[nMip].OffsetBytes;
 
-                    uint nDstSubResIdx = nMip + hdr.MipLevels * nSlice;
+                    uint nDstSubResIdx = nMip + hdr.FullTextureNumMipLevels * nSlice;
                     uint nRowPitch = layout.Plane[0].MipLayout[nMip].PitchBytes;
 
                     byte[] outputBytes = new byte[mipSizeBytes];
@@ -238,7 +290,7 @@ public unsafe class Program
                 }
             }
 
-            return outputFile;
+            return (layout, outputFile);
         }
         catch (Exception ex)
         {

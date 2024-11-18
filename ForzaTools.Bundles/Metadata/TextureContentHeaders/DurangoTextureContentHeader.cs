@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Syroot.BinaryData;
 
 using ForzaTools.Bundles.Blobs;
+using ForzaTools.Shared;
 using DurangoTypes;
 
 namespace ForzaTools.Bundles.Metadata.TextureContentHeaders;
@@ -14,15 +15,52 @@ namespace ForzaTools.Bundles.Metadata.TextureContentHeaders;
 public class DurangoTextureContentHeader
 {
     public Guid Guid { get; set; }
-    public ushort Width { get; set; }
-    public ushort Height { get; set; }
+
+    // Textures can be splitted into multiple files, as mip ranges.
+    // https://github.com/Nenkai/ForzaTools/issues/3
+
+    /// <summary>
+    /// Width of the first mip for this texture/split.
+    /// </summary>
+    public ushort BaseMipWidth { get; set; }
+
+    /// <summary>
+    /// Height of the first mip for this texture/split.
+    /// </summary>
+    public ushort BaseMipHeight { get; set; }
+
+    /// <summary>
+    /// Number of slices.
+    /// </summary>
     public ushort Depth_NumSlice { get; set; }
-    public ushort Width2 { get; set; }
-    public ushort Height2 { get; set; }
+
+    /// <summary>
+    /// Full texture width.
+    /// </summary>
+    public ushort FullTextureWidth { get; set; }
+
+    /// <summary>
+    /// Full texture height.
+    /// </summary>
+    public ushort FullTextureHeight { get; set; }
+
     public ushort UnkMip1 { get; set; }
-    public byte UnkMip2 { get; set; }
-    public byte MipLevels { get; set; }
+
+    /// <summary>
+    /// Number of mips for this texture/split. Example: If <see cref="BaseMipLevel"/> is 5 and NumMips is 2, this texture contains mip 5 and 6 of a full texture.
+    /// </summary>
+    public byte NumMips { get; set; }
+
+    /// <summary>
+    /// Number of mips in the main texture (when not split).
+    /// </summary>
+    public byte FullTextureNumMipLevels { get; set; }
+
+    /// <summary>
+    /// Base mip level for this texture/split. 5 would mean this texture is part of a bigger texture, and contains mips 5 and onwards.
+    /// </summary>
     public byte BaseMipLevel { get; set; }
+
     public uint RawBitFlags { get; set; }
 
     public XG_TILE_MODE TileMode
@@ -83,14 +121,14 @@ public class DurangoTextureContentHeader
     {
         using BinaryStream bs = new BinaryStream(new MemoryStream(data));
         Guid = new Guid(bs.ReadBytes(0x10));
-        Width = bs.ReadUInt16();
-        Height = bs.ReadUInt16();
+        BaseMipWidth = bs.ReadUInt16();
+        BaseMipHeight = bs.ReadUInt16();
         Depth_NumSlice = bs.ReadUInt16();
-        Width2 = bs.ReadUInt16();
-        Height2 = bs.ReadUInt16();
+        FullTextureWidth = bs.ReadUInt16();
+        FullTextureHeight = bs.ReadUInt16();
         UnkMip1 = bs.ReadUInt16();
-        UnkMip2 = bs.Read1Byte();
-        MipLevels = bs.Read1Byte();
+        NumMips = bs.Read1Byte();
+        FullTextureNumMipLevels = bs.Read1Byte();
         BaseMipLevel = bs.Read1Byte();
         RawBitFlags = bs.ReadUInt32();
     }

@@ -21,6 +21,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ForzaTools.TexConv", "Forza
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DurangoTypes", "DurangoTypes\DurangoTypes.csproj", "{4761F5BE-DC0D-45DB-8798-36051DD939FD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ForzaTools.Shared", "ForzaTools.Shared\ForzaTools.Shared.csproj", "{C36E47D9-4604-46E0-ABD3-0BB34E1EF818}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,6 +65,10 @@ Global
 		{4761F5BE-DC0D-45DB-8798-36051DD939FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4761F5BE-DC0D-45DB-8798-36051DD939FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4761F5BE-DC0D-45DB-8798-36051DD939FD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C36E47D9-4604-46E0-ABD3-0BB34E1EF818}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C36E47D9-4604-46E0-ABD3-0BB34E1EF818}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C36E47D9-4604-46E0-ABD3-0BB34E1EF818}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C36E47D9-4604-46E0-ABD3-0BB34E1EF818}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -6,8 +6,7 @@ using System.Threading.Tasks;
 
 using Syroot.BinaryData;
 
-using ForzaTools.Bundles.Blobs;
-using DurangoTypes;
+using ForzaTools.Shared;
 
 namespace ForzaTools.Bundles.Metadata;
 
