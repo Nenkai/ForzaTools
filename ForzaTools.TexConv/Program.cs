@@ -197,7 +197,7 @@ public unsafe class Program
     private static byte[] ToDds(byte[] data, DXGI_FORMAT dxgiFormat, int width, int height, int numMips)
     {
         var header = new DdsHeader();
-        header.Height = height; // TODO: Find out a better way to do this without needlessly padding the dds
+        header.Height = height;
         header.Width = width;
         header.LastMipmapLevel = numMips;
         header.FormatFlags = DDSPixelFormatFlags.DDPF_FOURCC;
