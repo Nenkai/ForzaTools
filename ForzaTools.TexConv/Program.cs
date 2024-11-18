@@ -25,7 +25,7 @@ namespace ForzaTools.TexConv;
 
 public unsafe class Program
 {
-    public const string Version = "1.0.0";
+    public const string Version = "1.0.1";
 
     static void Main(string[] args)
     {
@@ -33,7 +33,6 @@ public unsafe class Program
         Console.WriteLine($"- ForzaTools.TexConv {Version} by Nenkai");
         Console.WriteLine("---------------------------------------------");
         Console.WriteLine("- https://github.com/Nenkai");
-        Console.WriteLine("- https://github.com/WistfulHopes");
         Console.WriteLine("---------------------------------------------");
 
         if (args.Length < 1)
